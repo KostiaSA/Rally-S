@@ -4,6 +4,7 @@ import * as path from "path";
 import * as favicon from "serve-favicon";
 import * as cookieParser from "cookie-parser";
 import * as bodyParser from "body-parser";
+import {commonApiResponse} from "./responses";
 
 // Modular Route definitions
 //import * as exampleRoute from "./routes/example";
@@ -30,6 +31,14 @@ console.log(__dirname);
 // Register routes (as middleware layer through express.Router())
 //app.use(exampleRoute);
 
+// app.post('/api', (req: express.Request, res: express.Response, next: Function) => {
+//     console.log("api",req.body);
+//     res.send('Это api !');
+// });
+
+app.post('/api', commonApiResponse);
+
+
 // catch 404 and forward to error handler
 app.use((req: express.Request, res: express.Response, next: Function) => {
     let err = new Error("Not Found");
@@ -37,6 +46,7 @@ app.use((req: express.Request, res: express.Response, next: Function) => {
     console.log("catching 404 error");
     return next(err);
 });
+
 
 const port = process.env.PORT || 3000;
 app.set("port", port);
