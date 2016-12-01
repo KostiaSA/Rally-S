@@ -89,8 +89,8 @@ async function LOAD_RALLYHEADER_handler(req: ILoadRallyHeaderReq): Promise<ILoad
 
         sql = `
 SELECT 
-  [Ключ],[Номер],[Название],[Дата],[EngName],[Дата окончания],[Место проведения],
-  (SELECT master.sys.fn_varbintohexstr(max(DBTS)) FROM ReplLog where ReplTable=${replTable}) dbts
+  [Ключ],[Номер],[Название],[Дата],[EngName],[Дата окончания],[Место проведения]
+  --(SELECT master.sys.fn_varbintohexstr(max(DBTS)) FROM ReplLog where ReplTable=${replTable}) dbts
 FROM 
   [_RallyHeader] where [Текущая гонка]=1
   
@@ -135,8 +135,8 @@ async function LOAD_RALLYLEG_handler(req: ILoadRallyLegReq): Promise<ILoadRallyL
 
         sql = `
 SELECT 
-  [Ключ],[Номер],[Название],[Дата],[EngName],[Length],
-  (SELECT master.sys.fn_varbintohexstr(max(DBTS)) FROM ReplLog where ReplTable=${replTable}) dbts
+  [Ключ],[Номер],[Название],[Дата],[EngName],[Length]
+  --(SELECT master.sys.fn_varbintohexstr(max(DBTS)) FROM ReplLog where ReplTable=${replTable}) dbts
 FROM 
   [_RallyLeg] where [Текущий этап]=1
   
@@ -172,21 +172,32 @@ async function LOAD_RALLYPUNKT_handler(req: ILoadRallyPunktReq): Promise<ILoadRa
     let sql = `select count(1) cnt from ReplLog where ReplTable=${replTable} and DBTS>${req.dbts || "0x00"}`;
     let count = await getValueFromSql(sql, "cnt");
 
+    console.log("пиздец",count);
+
     if (count === 0)
         return getInstantPromise({rallyPunkt: undefined});
     else {
 
         sql = `
 SELECT 
-  [Ключ],[Номер],[Название],[Дата],[EngName],[Length],
-  (SELECT master.sys.fn_varbintohexstr(max(DBTS)) FROM ReplLog where ReplTable=${replTable}) dbts
-FROM 
-  [_rallyPunkt] where [Текущий этап]=1
-  
+  _RallyPunkt.Ключ,
+  _RallyPunkt.Номер,
+  _RallyPunkt.Название,
+  _RallyPunkt.Length
+    
+FROM [_RallyPunkt] 
+JOIN _RallyLeg ON _RallyLeg.Ключ=_RallyPunkt._RallyLeg
+JOIN _UsersLink ON _UsersLink._RallyPunkt=_RallyPunkt.Ключ
+WHERE 
+  _UsersLink.Login=${stringAsSql(req.login)} AND
+  _RallyLeg.[Текущий этап]=1
+
 SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable=${replTable}  
 `;
 
         let rows = await executeSql(sql);
+
+        console.log("rows",rows);
 
         let row = rows[0][0];
         let dbts = rows[1][0]["dbts"];
@@ -196,7 +207,6 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
                 id: row["Ключ"],
                 num: row["Номер"],
                 name: row["Название"],
-                date: row["Дата"],
                 length: row["Length"],
             };
 
