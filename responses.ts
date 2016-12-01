@@ -169,10 +169,8 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
 async function LOAD_RALLYPUNKT_handler(req: ILoadRallyPunktReq): Promise<ILoadRallyPunktAns> {
     let replTable=UsersLink_replTable;
 
-    let sql = `select count(1) cnt from ReplLog where ReplTable=${replTable} and DBTS>${req.dbts || "0x00"}`;
+    let sql = `select count(1) cnt from ReplLog where ReplTable IN (${replTable},${RallyPunkt_replTable}) and DBTS>${req.dbts || "0x00"}`;
     let count = await getValueFromSql(sql, "cnt");
-
-    console.log("пиздец",count);
 
     if (count === 0)
         return getInstantPromise({rallyPunkt: undefined});
@@ -192,7 +190,7 @@ WHERE
   _UsersLink.Login=${stringAsSql(req.login)} AND
   _RallyLeg.[Текущий этап]=1
 
-SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable=${replTable}  
+SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable IN (${replTable},${RallyPunkt_replTable})  
 `;
 
         let rows = await executeSql(sql);
