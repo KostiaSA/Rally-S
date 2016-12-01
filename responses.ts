@@ -2,8 +2,9 @@ import * as express from "express";
 import crypto = require("crypto-js");
 import {
     GET_ENCRYPT_KEY_CMD, LOGIN_CMD, IReq, IGetEncryptKeyReq, IGetEncryptKeyAns, IAns, ILoginReq,
-    ILoginAns, BAD_LOGIN_PASSWORD, LOAD_RALLYHEADER_CMD, ILoadRallyHeaderReq, ILoadRallyHeaderAns,
-    RallyHeader_replTable, IRallyHeader
+    ILoginAns, BAD_LOGIN_PASSWORD, LOAD_RALLYHEADER_CMD, LOAD_RALLYLEG_CMD, ILoadRallyHeaderReq, ILoadRallyHeaderAns,
+    RallyHeader_replTable, IRallyHeader, ILoadRallyLegReq, ILoadRallyLegAns, RallyLeg_replTable, IRallyLeg,
+    RallyPunkt_replTable, LOAD_RALLYPUNKT_CMD, ILoadRallyPunktReq, ILoadRallyPunktAns, IRallyPunkt, UsersLink_replTable
 } from "./api/api";
 import {getInstantPromise} from "./utils/getInstantPromise";
 import {stringAsSql} from "./sql/SqlCore";
@@ -30,6 +31,12 @@ export function commonApiResponse(req: express.Request, res: express.Response, n
             break;
         case LOAD_RALLYHEADER_CMD:
             ans = LOAD_RALLYHEADER_handler(decryptedBody);
+            break;
+        case LOAD_RALLYLEG_CMD:
+            ans = LOAD_RALLYLEG_handler(decryptedBody);
+            break;
+        case LOAD_RALLYPUNKT_CMD:
+            ans = LOAD_RALLYPUNKT_handler(decryptedBody);
             break;
         default:
             ans = getInstantPromise({error: "invalid api command"});
@@ -109,6 +116,94 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
         }
         else {
             return getInstantPromise({rallyHeader: undefined, dbts: dbts});
+        }
+
+    }
+}
+
+
+async function LOAD_RALLYLEG_handler(req: ILoadRallyLegReq): Promise<ILoadRallyLegAns> {
+    let replTable=RallyLeg_replTable;
+
+    let sql = `select count(1) cnt from ReplLog where ReplTable=${replTable} and DBTS>${req.dbts || "0x00"}`;
+
+    let count = await getValueFromSql(sql, "cnt");
+
+    if (count === 0)
+        return getInstantPromise({rallyLeg: undefined});
+    else {
+
+        sql = `
+SELECT 
+  [Ключ],[Номер],[Название],[Дата],[EngName],[Length],
+  (SELECT master.sys.fn_varbintohexstr(max(DBTS)) FROM ReplLog where ReplTable=${replTable}) dbts
+FROM 
+  [_RallyLeg] where [Текущий этап]=1
+  
+SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable=${replTable}  
+`;
+
+        let rows = await executeSql(sql);
+
+        let row = rows[0][0];
+        let dbts = rows[1][0]["dbts"];
+
+        if (row) {
+            let rallyLeg: IRallyLeg = {
+                id: row["Ключ"],
+                num: row["Номер"],
+                name: row["Название"],
+                date: row["Дата"],
+                length: row["Length"],
+            };
+
+            return getInstantPromise({rallyLeg: rallyLeg, dbts: dbts});
+        }
+        else {
+            return getInstantPromise({rallyLeg: undefined, dbts: dbts});
+        }
+
+    }
+}
+
+async function LOAD_RALLYPUNKT_handler(req: ILoadRallyPunktReq): Promise<ILoadRallyPunktAns> {
+    let replTable=UsersLink_replTable;
+
+    let sql = `select count(1) cnt from ReplLog where ReplTable=${replTable} and DBTS>${req.dbts || "0x00"}`;
+    let count = await getValueFromSql(sql, "cnt");
+
+    if (count === 0)
+        return getInstantPromise({rallyPunkt: undefined});
+    else {
+
+        sql = `
+SELECT 
+  [Ключ],[Номер],[Название],[Дата],[EngName],[Length],
+  (SELECT master.sys.fn_varbintohexstr(max(DBTS)) FROM ReplLog where ReplTable=${replTable}) dbts
+FROM 
+  [_rallyPunkt] where [Текущий этап]=1
+  
+SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable=${replTable}  
+`;
+
+        let rows = await executeSql(sql);
+
+        let row = rows[0][0];
+        let dbts = rows[1][0]["dbts"];
+
+        if (row) {
+            let rallyPunkt: IRallyPunkt = {
+                id: row["Ключ"],
+                num: row["Номер"],
+                name: row["Название"],
+                date: row["Дата"],
+                length: row["Length"],
+            };
+
+            return getInstantPromise({rallyPunkt: rallyPunkt, dbts: dbts});
+        }
+        else {
+            return getInstantPromise({rallyPunkt: undefined, dbts: dbts});
         }
 
     }
