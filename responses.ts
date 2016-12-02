@@ -4,7 +4,9 @@ import {
     GET_ENCRYPT_KEY_CMD, LOGIN_CMD, IReq, IGetEncryptKeyReq, IGetEncryptKeyAns, IAns, ILoginReq,
     ILoginAns, BAD_LOGIN_PASSWORD, LOAD_RALLYHEADER_CMD, LOAD_RALLYLEG_CMD, ILoadRallyHeaderReq, ILoadRallyHeaderAns,
     RallyHeader_replTable, IRallyHeader, ILoadRallyLegReq, ILoadRallyLegAns, RallyLeg_replTable, IRallyLeg,
-    RallyPunkt_replTable, LOAD_RALLYPUNKT_CMD, ILoadRallyPunktReq, ILoadRallyPunktAns, IRallyPunkt, UsersLink_replTable
+    RallyPunkt_replTable, LOAD_RALLYPUNKT_CMD, ILoadRallyPunktReq, ILoadRallyPunktAns, IRallyPunkt, UsersLink_replTable,
+    LegRegistration_replTable, ILoadLegRegistrationAns, ILoadLegRegistrationReq, ILegRegistration,
+    LOAD_LEGREGISTRATION_CMD, LOAD_PILOTS_CMD, ILoadPilotsReq, ILoadPilotsAns, Pilots_replTable, IPilot
 } from "./api/api";
 import {getInstantPromise} from "./utils/getInstantPromise";
 import {stringAsSql} from "./sql/SqlCore";
@@ -37,6 +39,12 @@ export function commonApiResponse(req: express.Request, res: express.Response, n
             break;
         case LOAD_RALLYPUNKT_CMD:
             ans = LOAD_RALLYPUNKT_handler(decryptedBody);
+            break;
+        case LOAD_LEGREGISTRATION_CMD:
+            ans = LOAD_LEGREGISTRATION_handler(decryptedBody);
+            break;
+        case LOAD_PILOTS_CMD:
+            ans = LOAD_PILOTS_handler(decryptedBody);
             break;
         default:
             ans = getInstantPromise({error: "invalid api command"});
@@ -212,6 +220,104 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
         }
         else {
             return getInstantPromise({rallyPunkt: undefined, dbts: dbts});
+        }
+
+    }
+}
+
+async function LOAD_LEGREGISTRATION_handler(req: ILoadLegRegistrationReq): Promise<ILoadLegRegistrationAns> {
+    let replTable=LegRegistration_replTable;
+
+    let sql = `select count(1) cnt from ReplLog where ReplTable=${replTable} and DBTS>${req.dbts || "0x00"}`;
+    let count = await getValueFromSql(sql, "cnt");
+
+    if (count === 0)
+        return getInstantPromise({legRegistration: undefined});
+    else {
+
+        sql = `
+SELECT 
+  _LegRegistration.Ключ id,
+  _LegRegistration._Pilots pilotId,
+  _LegRegistration.RaceNumber raceNumber,
+  _LegRegistration.NPP npp,
+  _LegRegistration.StartTime startTime
+FROM _LegRegistration 
+JOIN _RallyLeg ON _RallyLeg.Ключ=_LegRegistration._RallyLeg
+WHERE 
+  _RallyLeg.[Текущий этап]=1
+ORDER BY 
+  _LegRegistration.NPP
+
+SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable=${replTable}  
+`;
+
+        let rows = await executeSql(sql);
+
+        console.log("rows",rows);
+
+        let regRows = rows[0];
+        let dbts = rows[1][0]["dbts"];
+
+        if (regRows) {
+            let legRegistration: ILegRegistration[]=regRows.map((item:any)=>{
+
+                return {
+                    id: item["id"],
+                    pilotId: item["pilotId"],
+                    raceNumber: item["raceNumber"],
+                    npp: item["npp"],
+                    startTime: item["startTime"]
+                } as ILegRegistration;
+
+            });
+
+            return getInstantPromise({legRegistration: legRegistration, dbts: dbts});
+        }
+        else {
+            return getInstantPromise({legRegistration: undefined, dbts: dbts});
+        }
+
+    }
+}
+
+async function LOAD_PILOTS_handler(req: ILoadPilotsReq): Promise<ILoadPilotsAns> {
+    let replTable=Pilots_replTable;
+
+    let sql = `select count(1) cnt from ReplLog where ReplTable=${replTable} and DBTS>${req.dbts || "0x00"}`;
+    let count = await getValueFromSql(sql, "cnt");
+
+    if (count === 0)
+        return getInstantPromise({pilots: undefined});
+    else {
+
+        sql = `
+SELECT Ключ,Имя,EngName,AutoName FROM _Pilots
+SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable=${replTable}  
+`;
+
+        let rows = await executeSql(sql);
+
+        console.log("rows",rows);
+
+        let pilotsRows = rows[0];
+        let dbts = rows[1][0]["dbts"];
+
+        if (pilotsRows) {
+            let pilots: IPilot[]=pilotsRows.map((item:any)=>{
+                return {
+                    id: item["Ключ"],
+                    name: item["Имя"],
+                    engName: item["EngName"],
+                    autoName: item["AutoName"]
+                } as IPilot;
+
+            });
+
+            return getInstantPromise({pilots: pilots, dbts: dbts});
+        }
+        else {
+            return getInstantPromise({pilots: undefined, dbts: dbts});
         }
 
     }
