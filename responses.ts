@@ -7,10 +7,11 @@ import {
     RallyPunkt_replTable, LOAD_RALLYPUNKT_CMD, ILoadRallyPunktReq, ILoadRallyPunktAns, IRallyPunkt, UsersLink_replTable,
     LegRegistration_replTable, ILoadLegRegistrationAns, ILoadLegRegistrationReq, ILegRegistration,
     LOAD_LEGREGISTRATION_CMD, LOAD_PILOTS_CMD, ILoadPilotsReq, ILoadPilotsAns, Pilots_replTable, IPilot,
-    LOAD_CHECKPOINTS_CMD, CheckPoint_replTable, ILoadCheckPointsReq, ILoadCheckPointsAns, ICheckPoint
+    LOAD_CHECKPOINTS_CMD, CheckPoint_replTable, ILoadCheckPointsReq, ILoadCheckPointsAns, ICheckPoint,
+    ISaveCheckPointsAns, ISaveCheckPointsReq, SAVE_CHECKPOINTS_CMD
 } from "./api/api";
 import {getInstantPromise} from "./utils/getInstantPromise";
-import {stringAsSql} from "./sql/SqlCore";
+import {stringAsSql, dateTimeAsSql} from "./sql/SqlCore";
 import {getValueFromSql, executeSql} from "./sql/MsSqlDb";
 
 function sqlDateToStr(date: Date): any {
@@ -18,7 +19,7 @@ function sqlDateToStr(date: Date): any {
 }
 
 export function commonApiResponse(req: express.Request, res: express.Response, next: Function) {
-    console.log("api", req.body);
+    //console.log("api", req.body);
 
     if (req.body.cmd === GET_ENCRYPT_KEY_CMD) {
         res.send(JSON.stringify({encryptKey: getEncryptKeyFromSessionId(req.body.sessionId)}));
@@ -53,6 +54,9 @@ export function commonApiResponse(req: express.Request, res: express.Response, n
             break;
         case LOAD_CHECKPOINTS_CMD:
             ans = LOAD_CHECKPOINTS_handler(decryptedBody);
+            break;
+        case SAVE_CHECKPOINTS_CMD:
+            ans = SAVE_CHECKPOINTS_handler(decryptedBody);
             break;
         default:
             ans = getInstantPromise({error: "invalid api command"});
@@ -211,7 +215,7 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
 
         let rows = await executeSql(sql);
 
-        console.log("rows", rows);
+        //console.log("rows", rows);
 
         let row = rows[0][0];
         let dbts = rows[1][0]["dbts"];
@@ -262,7 +266,7 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
 
         let rows = await executeSql(sql);
 
-        console.log("rows", rows);
+        //console.log("rows", rows);
 
         let regRows = rows[0];
         let dbts = rows[1][0]["dbts"];
@@ -306,7 +310,7 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
 
         let rows = await executeSql(sql);
 
-        console.log("rows", rows);
+        //console.log("rows", rows);
 
         let pilotsRows = rows[0];
         let dbts = rows[1][0]["dbts"];
@@ -341,6 +345,8 @@ async function LOAD_CHECKPOINTS_handler(req: ILoadCheckPointsReq): Promise<ILoad
         return getInstantPromise({checkPoints: undefined});
     else {
 
+        //console.log("LOAD_CHECKPOINTS_handler", req.dbts);
+
         sql = `
 SELECT [Ключ]
       ,[CheckTime]
@@ -361,7 +367,7 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
 
         let rows = await executeSql(sql);
 
-        console.log("rows", rows);
+        //console.log("rows", rows);
 
         let checkPointsRows = rows[0];
         let dbts = rows[1][0]["dbts"];
@@ -382,7 +388,7 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
 
             });
 
-            console.log("checkpoints", checkpoints);
+            //console.log("checkpoints", checkpoints);
             return getInstantPromise({checkPoints: checkpoints, dbts: dbts});
         }
         else {
@@ -390,4 +396,84 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
         }
 
     }
+}
+
+async function SAVE_CHECKPOINTS_handler(req: ISaveCheckPointsReq): Promise<ISaveCheckPointsAns> {
+
+    console.log("SAVE_CHECKPOINTS_handler",req);
+
+    let sqlBatch = `
+ DECLARE @id INT 
+ DECLARE @CheckTime DATETIME
+ DECLARE @PenaltyTime DATETIME
+ DECLARE @LegRegistration INT
+ DECLARE @RallyPunkt INT
+ DECLARE @MobileID VARCHAR(MAX)
+ DECLARE @MobileLogin VARCHAR(MAX)
+ DECLARE @MobileDevice VARCHAR(MAX)
+ DECLARE @MobileTime  DATETIME
+`;
+
+    req.checkPoints.forEach((item: ICheckPoint) => {
+        let sql = `
+       
+SET @id = -1 
+SET @CheckTime = ${ dateTimeAsSql(item.checkTime) }
+SET @PenaltyTime = ${ dateTimeAsSql(item.penaltyTime) }
+SET @LegRegistration = ${ item.legRegsId }
+SET @RallyPunkt = ${ item.rallyPunktId }
+SET @MobileID = ${ stringAsSql(item.mobileId) }
+SET @MobileLogin = ${ stringAsSql(item.mobileLogin) }
+SET @MobileDevice = ${ stringAsSql(item.mobileDevice) }
+SET @MobileTime = ${ dateTimeAsSql(item.mobileTime) }
+       
+SELECT @id FROM _CheckPoint WHERE MobileId=${ stringAsSql(item.mobileId) }
+        
+IF @id=-1 
+BEGIN
+  INSERT _CheckPoint ( 
+      [CheckTime]
+      ,[PenaltyTime]
+      ,[_LegRegistration]
+      ,[_RallyPunkt]
+      ,[MobileID]
+      ,[MobileLogin]
+      ,[MobileDevice]
+      ,[MobileTime]
+      )
+  VALUES (
+      @CheckTime,
+      @PenaltyTime,
+      @LegRegistration,
+      @RallyPunkt,
+      @MobileID,
+      @MobileLogin,
+      @MobileDevice,
+      @MobileTime
+  )
+END
+ELSE
+BEGIN
+  UPDATE _CheckPoint SET
+      [CheckTime]=@CheckTime,
+      [PenaltyTime]=@PenaltyTime,
+      [_LegRegistration]=@LegRegistration,
+      [_RallyPunkt]=@RallyPunkt,
+      [MobileID]=@MobileID,
+      [MobileLogin]=@MobileLogin,
+      [MobileDevice]=@MobileDevice,
+      [MobileTime]=@MobileTime
+  WHERE Ключ=@id
+END
+  
+`;
+
+        sqlBatch += sql;
+
+    });
+
+    await executeSql(sqlBatch);
+
+    return getInstantPromise({});
+
 }
