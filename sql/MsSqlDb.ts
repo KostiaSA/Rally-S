@@ -13,9 +13,9 @@ export async function executeSql(sqlBatch: string): Promise<any> {
     let conf: sql.config = {
       //  driver: "msnodesqlv8",
         pool: {
-            min: 5,
-            max: 50,
-            idleTimeoutMillis: 5000 /// не работает
+            min: 0,
+            max: 150,
+            idleTimeoutMillis: 60000 /// не работает
         },
         server: config.sqlServerAddress,
         port: config.sqlServerPort,

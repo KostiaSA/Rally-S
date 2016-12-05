@@ -6,7 +6,8 @@ import {
     RallyHeader_replTable, IRallyHeader, ILoadRallyLegReq, ILoadRallyLegAns, RallyLeg_replTable, IRallyLeg,
     RallyPunkt_replTable, LOAD_RALLYPUNKT_CMD, ILoadRallyPunktReq, ILoadRallyPunktAns, IRallyPunkt, UsersLink_replTable,
     LegRegistration_replTable, ILoadLegRegistrationAns, ILoadLegRegistrationReq, ILegRegistration,
-    LOAD_LEGREGISTRATION_CMD, LOAD_PILOTS_CMD, ILoadPilotsReq, ILoadPilotsAns, Pilots_replTable, IPilot
+    LOAD_LEGREGISTRATION_CMD, LOAD_PILOTS_CMD, ILoadPilotsReq, ILoadPilotsAns, Pilots_replTable, IPilot,
+    LOAD_CHECKPOINTS_CMD, CheckPoint_replTable, ILoadCheckPointsReq, ILoadCheckPointsAns, ICheckPoint
 } from "./api/api";
 import {getInstantPromise} from "./utils/getInstantPromise";
 import {stringAsSql} from "./sql/SqlCore";
@@ -46,6 +47,9 @@ export function commonApiResponse(req: express.Request, res: express.Response, n
         case LOAD_PILOTS_CMD:
             ans = LOAD_PILOTS_handler(decryptedBody);
             break;
+        case LOAD_CHECKPOINTS_CMD:
+            ans = LOAD_CHECKPOINTS_handler(decryptedBody);
+            break;
         default:
             ans = getInstantPromise({error: "invalid api command"});
     }
@@ -78,14 +82,14 @@ async function LOGIN_handler(req: ILoginReq): Promise<ILoginAns> {
     let fio = await getValueFromSql(sql2, "FIO");
 
     if (req.password === pass)
-        return getInstantPromise({user:fio});
+        return getInstantPromise({user: fio});
     else
-        return getInstantPromise({error: BAD_LOGIN_PASSWORD, user:""});
+        return getInstantPromise({error: BAD_LOGIN_PASSWORD, user: ""});
 
 }
 
 async function LOAD_RALLYHEADER_handler(req: ILoadRallyHeaderReq): Promise<ILoadRallyHeaderAns> {
-    let replTable=RallyHeader_replTable;
+    let replTable = RallyHeader_replTable;
 
     let sql = `select count(1) cnt from ReplLog where ReplTable=${replTable} and DBTS>${req.dbts || "0x00"}`;
 
@@ -131,7 +135,7 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
 
 
 async function LOAD_RALLYLEG_handler(req: ILoadRallyLegReq): Promise<ILoadRallyLegAns> {
-    let replTable=RallyLeg_replTable;
+    let replTable = RallyLeg_replTable;
 
     let sql = `select count(1) cnt from ReplLog where ReplTable=${replTable} and DBTS>${req.dbts || "0x00"}`;
 
@@ -175,7 +179,7 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
 }
 
 async function LOAD_RALLYPUNKT_handler(req: ILoadRallyPunktReq): Promise<ILoadRallyPunktAns> {
-    let replTable=UsersLink_replTable;
+    let replTable = UsersLink_replTable;
 
     let sql = `select count(1) cnt from ReplLog where ReplTable IN (${replTable},${RallyPunkt_replTable}) and DBTS>${req.dbts || "0x00"}`;
     let count = await getValueFromSql(sql, "cnt");
@@ -203,7 +207,7 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
 
         let rows = await executeSql(sql);
 
-        console.log("rows",rows);
+        console.log("rows", rows);
 
         let row = rows[0][0];
         let dbts = rows[1][0]["dbts"];
@@ -226,7 +230,7 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
 }
 
 async function LOAD_LEGREGISTRATION_handler(req: ILoadLegRegistrationReq): Promise<ILoadLegRegistrationAns> {
-    let replTable=LegRegistration_replTable;
+    let replTable = LegRegistration_replTable;
 
     let sql = `select count(1) cnt from ReplLog where ReplTable=${replTable} and DBTS>${req.dbts || "0x00"}`;
     let count = await getValueFromSql(sql, "cnt");
@@ -254,13 +258,13 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
 
         let rows = await executeSql(sql);
 
-        console.log("rows",rows);
+        console.log("rows", rows);
 
         let regRows = rows[0];
         let dbts = rows[1][0]["dbts"];
 
         if (regRows) {
-            let legRegistration: ILegRegistration[]=regRows.map((item:any)=>{
+            let legRegistration: ILegRegistration[] = regRows.map((item: any) => {
 
                 return {
                     id: item["id"],
@@ -282,7 +286,7 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
 }
 
 async function LOAD_PILOTS_handler(req: ILoadPilotsReq): Promise<ILoadPilotsAns> {
-    let replTable=Pilots_replTable;
+    let replTable = Pilots_replTable;
 
     let sql = `select count(1) cnt from ReplLog where ReplTable=${replTable} and DBTS>${req.dbts || "0x00"}`;
     let count = await getValueFromSql(sql, "cnt");
@@ -298,13 +302,13 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
 
         let rows = await executeSql(sql);
 
-        console.log("rows",rows);
+        console.log("rows", rows);
 
         let pilotsRows = rows[0];
         let dbts = rows[1][0]["dbts"];
 
         if (pilotsRows) {
-            let pilots: IPilot[]=pilotsRows.map((item:any)=>{
+            let pilots: IPilot[] = pilotsRows.map((item: any) => {
                 return {
                     id: item["Ключ"],
                     name: item["Имя"],
@@ -318,6 +322,66 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
         }
         else {
             return getInstantPromise({pilots: undefined, dbts: dbts});
+        }
+
+    }
+}
+
+async function LOAD_CHECKPOINTS_handler(req: ILoadCheckPointsReq): Promise<ILoadCheckPointsAns> {
+    let replTable = CheckPoint_replTable;
+
+    let sql = `select count(1) cnt from ReplLog where ReplTable=${replTable} and DBTS>${req.dbts || "0x00"}`;
+    let count = await getValueFromSql(sql, "cnt");
+
+    if (count === 0)
+        return getInstantPromise({checkPoints: undefined});
+    else {
+
+        sql = `
+SELECT [Ключ]
+      ,[CheckTime]
+      ,[PenaltyTime]
+      ,[_LegRegistration]
+      ,[_RallyPunkt]
+      ,[ReplGuid]
+      ,[MobileID]
+      ,[MobileLogin]
+      ,[MobileDevice]
+      ,[MobileTime]
+FROM 
+  [_CheckPoint]
+WHERE _RallyPunkt=${req.rallyPunktId}  
+
+SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable=${replTable}  
+`;
+
+        let rows = await executeSql(sql);
+
+        console.log("rows", rows);
+
+        let checkPointsRows = rows[0];
+        let dbts = rows[1][0]["dbts"];
+
+        if (checkPointsRows) {
+            let checkpoints: ICheckPoint[] = checkPointsRows.map((item: any) => {
+                return {
+                    legRegsId: item["_LegRegistration"],
+                    rallyPunktId: item["_RallyPunkt"],
+                    checkTime: item["CheckTime"],
+                    penaltyTime: item["PenaltyTime"],
+                    mobileId: item["MobileId"],
+                    mobileTime: item["MobileTime"],
+                    mobileLogin: item["MobileLogin"],
+                    mobileDevice: item["MobileDevice"],
+                    syncOk: true
+                } as ICheckPoint;
+
+            });
+
+            return getInstantPromise({checkPoints: checkpoints, dbts: dbts});
+        }
+        else {
+            return getInstantPromise({checkPoints: undefined, dbts: dbts});
         }
 
     }
