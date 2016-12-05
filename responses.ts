@@ -13,6 +13,10 @@ import {getInstantPromise} from "./utils/getInstantPromise";
 import {stringAsSql} from "./sql/SqlCore";
 import {getValueFromSql, executeSql} from "./sql/MsSqlDb";
 
+function sqlDateToStr(date: Date): any {
+    return date.toISOString().replace("Z", "").replace("T", " ");
+}
+
 export function commonApiResponse(req: express.Request, res: express.Response, next: Function) {
     console.log("api", req.body);
 
@@ -367,9 +371,9 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
                 return {
                     legRegsId: item["_LegRegistration"],
                     rallyPunktId: item["_RallyPunkt"],
-                    checkTime: item["CheckTime"],
-                    penaltyTime: item["PenaltyTime"],
-                    mobileId: item["MobileId"],
+                    checkTime: sqlDateToStr(item["CheckTime"]),
+                    penaltyTime: sqlDateToStr(item["PenaltyTime"]),
+                    mobileId: item["MobileID"],
                     mobileTime: item["MobileTime"],
                     mobileLogin: item["MobileLogin"],
                     mobileDevice: item["MobileDevice"],
@@ -378,6 +382,7 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
 
             });
 
+            console.log("checkpoints", checkpoints);
             return getInstantPromise({checkPoints: checkpoints, dbts: dbts});
         }
         else {
