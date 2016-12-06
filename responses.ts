@@ -400,7 +400,7 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
 
 async function SAVE_CHECKPOINTS_handler(req: ISaveCheckPointsReq): Promise<ISaveCheckPointsAns> {
 
-    console.log("SAVE_CHECKPOINTS_handler",req);
+   // console.log("SAVE_CHECKPOINTS_handler",req);
 
     let sqlBatch = `
  DECLARE @id INT 
@@ -427,7 +427,7 @@ SET @MobileLogin = ${ stringAsSql(item.mobileLogin) }
 SET @MobileDevice = ${ stringAsSql(item.mobileDevice) }
 SET @MobileTime = ${ dateTimeAsSql(item.mobileTime) }
        
-SELECT @id FROM _CheckPoint WHERE MobileId=${ stringAsSql(item.mobileId) }
+SELECT @id=Ключ FROM _CheckPoint WHERE MobileId=${ stringAsSql(item.mobileId) }
         
 IF @id=-1 
 BEGIN
