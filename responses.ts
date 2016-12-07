@@ -20,7 +20,7 @@ function sqlDateToStr(date: Date): any {
 }
 
 export function commonApiResponse(req: express.Request, res: express.Response, next: Function) {
-    //console.log("api", req.body);
+    //console.log("api1", req.body);
 
     if (req.body.cmd === GET_ENCRYPT_KEY_CMD) {
         res.send(JSON.stringify({encryptKey: getEncryptKeyFromSessionId(req.body.sessionId)}));
