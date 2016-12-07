@@ -13,9 +13,10 @@ import {
 import {getInstantPromise} from "./utils/getInstantPromise";
 import {stringAsSql, dateTimeAsSql} from "./sql/SqlCore";
 import {getValueFromSql, executeSql} from "./sql/MsSqlDb";
+import {replaceAll} from "./utils/replaceAll";
 
 function sqlDateToStr(date: Date): any {
-    return date.toISOString().replace("Z", "").replace("T", " ");
+    return replaceAll(date.toISOString().replace("Z", "").replace("T", " "),"-","/").split(".")[0];
 }
 
 export function commonApiResponse(req: express.Request, res: express.Response, next: Function) {
