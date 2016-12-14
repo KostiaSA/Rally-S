@@ -156,7 +156,7 @@ async function LOAD_RALLYLEG_handler(req: ILoadRallyLegReq): Promise<ILoadRallyL
 
         sql = `
 SELECT 
-  [Ключ],[Номер],[Название],[Дата],[EngName],[Length]
+  Ключ, Номер, Название, Дата, EngName, Length, TimeZone
   --(SELECT master.sys.fn_varbintohexstr(max(DBTS)) FROM ReplLog where ReplTable=${replTable}) dbts
 FROM 
   [_RallyLeg] where [Текущий этап]=1
@@ -176,6 +176,7 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
                 name: row["Название"],
                 date: row["Дата"],
                 length: row["Length"],
+                timeZone: row["TimeZone"],
             };
 
             return getInstantPromise({rallyLeg: rallyLeg, dbts: dbts});
