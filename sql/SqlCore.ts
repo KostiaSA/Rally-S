@@ -1,14 +1,17 @@
 import * as moment from "moment";
 
 function mssql_escape_string(str: string) {
-    return str.replace(/./g, function (char: string): string {
-        switch (char) {
-            case "'":
-                return "''";
-            default:
-                return char;
-        }
-    });
+    if (!str)
+        return "";
+    else
+        return str.replace(/./g, function (char: string): string {
+            switch (char) {
+                case "'":
+                    return "''";
+                default:
+                    return char;
+            }
+        });
 }
 
 export function stringAsSql(value: string): string {
@@ -24,7 +27,7 @@ export function dateTimeAsSql(value: Date): string {
 }
 
 export function guidAsSql(value: string): string {
-   return "CONVERT(UNIQUEIDENTIFIER,'" + value + "')";
+    return "CONVERT(UNIQUEIDENTIFIER,'" + value + "')";
 }
 
 function toHexString(bytes: any) {

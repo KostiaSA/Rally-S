@@ -16,7 +16,7 @@ function testImportFrom1c() {
             process.exit();
         })
         .catch((e: any) => {
-            //console.error("testImportFrom1c:", e);
+            console.error("testImportFrom1c:", e);
             process.exit(1);
         });
 }

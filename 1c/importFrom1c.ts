@@ -54,16 +54,21 @@ export async function importFrom1c(json: any): Promise<void> {
 
             // перебираем этапы
 
-            let specUch_sql = `DECLARE @SpecUchId INT`;
+            let specUch_sql = `
+DECLARE @SpecUchId INT
+DECLARE @LegRegistrationId INT
+`;
 
             if (!json.StageCompetitions)
                 reject("нет свойства 'StageCompetitions'");
             json.StageCompetitions.forEach((stageCompetition: any) => {
+
+                //////// спецучасток ///////////////////
                 if (!stageCompetition.StageList) {
                     reject("нет свойства 'StageCompetitions[0].StageList'");
                 }
 
-                stageCompetition.StageList.forEach((stage: any) => { // этап/спецучасток _RallySpecUch
+                stageCompetition.StageList.forEach((stage: any, npp:number) => { // этап/спецучасток _RallySpecUch
 
                     let specUch_Fields: any[] = [];
                     // "ID": "fa29fa46-7897-4e87-984e-df9848fff974",
@@ -121,6 +126,7 @@ export async function importFrom1c(json: any): Promise<void> {
                     specUch_Fields.push(["Длина", stage.Length]);
 
                     specUch_Fields.push(["_RallyHeader", "@RallyHeaderId"]);
+                    specUch_Fields.push(["NPP", npp+1]);
 
 
                     specUch_sql += `
@@ -132,6 +138,104 @@ END
 ELSE
 BEGIN
   UPDATE _RallySpecUch SET ${ emitFieldList_forUpdate(specUch_Fields)} WHERE ReplGuid=${guidAsSql(stage.ID)}
+END                 
+`;
+
+                });
+
+                //////// экипаж ///////////////////
+                if (!stageCompetition.CrewList) {
+                    reject("нет свойства 'StageCompetitions[0].CrewList'");
+                }
+
+                stageCompetition.CrewList.forEach((crew: any, index: number) => { // экипаж _LegRegistration
+
+                    let crew_Fields: any[] = [];
+                    // "Number": 200,
+                    //     "Pilot": {
+                    //     "ID": "02a7f6f5-993a-11e5-8cb2-001e3df01710",
+                    //         "Name": "Йоуни",
+                    //         "SecondName": "АМПУЯ",
+                    //         "NameEN": "Youni",
+                    //         "SecondNameEN": "AMPUJA",
+                    //         "Country": "Финляндия"
+                    // },
+                    // "Navigator": {
+                    //     "ID": "02a7f6f6-993a-11e5-8cb2-001e3df01710",
+                    //         "Name": "Маркку ",
+                    //         "SecondName": "ХУРСКАЙНЕН",
+                    //         "NameEN": "Markku ",
+                    //         "SecondNameEN": "KHURSKAYNEN",
+                    //         "Country": "Финляндия"
+                    // },
+                    // "Mechanic": {
+                    //     "ID": "00000000-0000-0000-0000-000000000000",
+                    //         "Name": "",
+                    //         "SecondName": "",
+                    //         "NameEN": "",
+                    //         "SecondNameEN": "",
+                    //         "Country": ""
+                    // },
+                    // "Car": "Mitsubishi Pajero Evolution",
+                    //     "Class": "Т1",
+                    //     "Declarer": {
+                    //     "ID": "02a7f6f8-993a-11e5-8cb2-001e3df01710",
+                    //         "Name": "",
+                    //         "SecondName": "RE Autoclub",
+                    //         "NameEN": "",
+                    //         "SecondNameEN": "RE Autoclub",
+                    //         "Country": "РОССИЯ"
+                    // },
+                    // "Team": "RE AUTOCLUB",
+                    //     "Priority": "",
+                    //     "PriorityEN": ""
+                    //console.log(index, crew);
+                    //console.log("RaceNumber1");
+                    if (!crew.Number) {
+                        reject("нет свойства 'StageCompetitions[0].CrewList[0].Number'");
+                        return;
+                    }
+                    crew_Fields.push(["RaceNumber", stringAsSql(crew.Number.toString())]);
+                    //console.log("RaceNumber");
+
+                    if (crew.Pilot === undefined) {
+                        reject("нет свойства 'StageCompetitions[0].CrewList[0].Pilot'");
+                        return;
+                    }
+                    crew_Fields.push(["Пилот", stringAsSql((crew.Pilot.Name ? crew.Pilot.Name : "") + " " + (crew.Pilot.SecondName ? crew.Pilot.SecondName : ""))]);
+                    crew_Fields.push(["ПилотАнгл", stringAsSql((crew.Pilot.NameEn ? crew.Pilot.NameEn : "") + " " + (crew.Pilot.SecondNameEn ? crew.Pilot.SecondNameEn : ""))]);
+                    crew_Fields.push(["Страна", stringAsSql(crew.Pilot.Country)]);
+
+                    if (crew.Car === undefined) {
+                        reject("нет свойства 'StageCompetitions[0].CrewList[0].Car'");
+                        return;
+                    }
+                    crew_Fields.push(["Автомобиль", stringAsSql(crew.Car)]);
+
+                    if (crew.Class === undefined) {
+                        reject("нет свойства 'StageCompetitions[0].CrewList[0].Class'");
+                        return;
+                    }
+                    crew_Fields.push(["Класс", stringAsSql(crew.Class)]);
+
+                    if (crew.Team === undefined) {
+                        reject("нет свойства 'StageCompetitions[0].CrewList[0].Team'");
+                        return;
+                    }
+                    crew_Fields.push(["Команда", stringAsSql(crew.Team)]);
+
+                    crew_Fields.push(["_RallyHeader", "@RallyHeaderId"]);
+
+
+                    specUch_sql += `
+SELECT @LegRegistrationId=Ключ FROM _LegRegistration WHERE RaceNumber=${crew.Number} AND _RallyHeader=@RallyHeaderId 
+IF @LegRegistrationId IS NULL
+BEGIN
+  INSERT _LegRegistration(${ emitFieldList(crew_Fields, "target")}) VALUES(${ emitFieldList(crew_Fields, "source")})
+END
+ELSE
+BEGIN
+  UPDATE _LegRegistration SET ${ emitFieldList_forUpdate(crew_Fields)} WHERE Ключ=@LegRegistrationId
 END                 
 `;
 
