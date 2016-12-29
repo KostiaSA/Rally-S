@@ -5,6 +5,7 @@ import * as favicon from "serve-favicon";
 import * as cookieParser from "cookie-parser";
 import * as bodyParser from "body-parser";
 import {commonApiResponse} from "./responses";
+import {importFrom1cResponse} from "./1c/importFrom1c";
 
 // Modular Route definitions
 //import * as exampleRoute from "./routes/example";
@@ -37,6 +38,8 @@ console.log(__dirname);
 // });
 
 app.post('/api', commonApiResponse);
+app.post('/export-j0mgep94p4ati7krh3t0', importFrom1cResponse);
+//app.post('/import-bq9djhhj9m6795ry9o3a', exportTo1cResponse);
 
 
 // catch 404 and forward to error handler
