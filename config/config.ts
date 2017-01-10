@@ -7,14 +7,23 @@ export interface IConfig {
     sqlDatabase: string;
 }
 
-let developDir: IConfig = {
-    sqlServerAddress: "car",
+// let developDir: IConfig = {
+//     sqlServerAddress: "car",
+//     sqlServerInstance: "",
+//     sqlServerPort: 1433,
+//     sqlLogin: "sa",
+//     sqlPassword: "sonyk",
+//     sqlDatabase: "Rally",
+// }
+
+let cloudDir: IConfig = {
+    sqlServerAddress: "online.bajarussia.com",
     sqlServerInstance: "",
     sqlServerPort: 1433,
     sqlLogin: "sa",
-    sqlPassword: "sonyk",
+    sqlPassword: "12KloP09",
     sqlDatabase: "Rally",
 }
 
 
-export let config :IConfig = developDir;
+export let config :IConfig = cloudDir;

@@ -1,14 +1,49 @@
 import * as express from "express";
 import crypto = require("crypto-js");
 import {
-    GET_ENCRYPT_KEY_CMD, LOGIN_CMD, IReq, IGetEncryptKeyReq, IGetEncryptKeyAns, IAns, ILoginReq,
-    ILoginAns, BAD_LOGIN_PASSWORD, LOAD_RALLYHEADER_CMD, LOAD_RALLYLEG_CMD, ILoadRallyHeaderReq, ILoadRallyHeaderAns,
-    RallyHeader_replTable, IRallyHeader, ILoadRallyLegReq, ILoadRallyLegAns, RallyLeg_replTable, IRallyLeg,
-    RallyPunkt_replTable, LOAD_RALLYPUNKT_CMD, ILoadRallyPunktReq, ILoadRallyPunktAns, IRallyPunkt, UsersLink_replTable,
-    LegRegistration_replTable, ILoadLegRegistrationAns, ILoadLegRegistrationReq, ILegRegistration,
-    LOAD_LEGREGISTRATION_CMD, LOAD_PILOTS_CMD, ILoadPilotsReq, ILoadPilotsAns, Pilots_replTable, IPilot,
-    LOAD_CHECKPOINTS_CMD, CheckPoint_replTable, ILoadCheckPointsReq, ILoadCheckPointsAns, ICheckPoint,
-    ISaveCheckPointsAns, ISaveCheckPointsReq, SAVE_CHECKPOINTS_CMD
+    GET_ENCRYPT_KEY_CMD,
+    LOGIN_CMD,
+    IReq,
+    IGetEncryptKeyReq,
+    IGetEncryptKeyAns,
+    IAns,
+    ILoginReq,
+    ILoginAns,
+    BAD_LOGIN_PASSWORD,
+    LOAD_RALLYHEADER_CMD,
+    LOAD_RALLYSPECUCH_CMD,
+    ILoadRallyHeaderReq,
+    ILoadRallyHeaderAns,
+    RallyHeader_replTable,
+    IRallyHeader,
+    ILoadRallySpecUchReq,
+    ILoadRallySpecUchAns,
+    RallySpecUch_replTable,
+    IRallySpecUch,
+    RallyPunkt_replTable,
+    LOAD_RALLYPUNKT_CMD,
+    ILoadRallyPunktReq,
+    ILoadRallyPunktAns,
+    IRallyPunkt,
+    UsersLink_replTable,
+    LegRegistration_replTable,
+    ILoadLegRegistrationAns,
+    ILoadLegRegistrationReq,
+    ILegRegistration,
+    LOAD_LEGREGISTRATION_CMD,
+    // LOAD_PILOTS_CMD,
+    // ILoadPilotsReq,
+    // ILoadPilotsAns,
+    // Pilots_replTable,
+    // IPilot,
+    LOAD_CHECKPOINTS_CMD,
+    CheckPoint_replTable,
+    ILoadCheckPointsReq,
+    ILoadCheckPointsAns,
+    ICheckPoint,
+    ISaveCheckPointsAns,
+    ISaveCheckPointsReq,
+    SAVE_CHECKPOINTS_CMD
 } from "./api/api";
 import {getInstantPromise} from "./utils/getInstantPromise";
 import {stringAsSql, dateTimeAsSql} from "./sql/SqlCore";
@@ -16,7 +51,7 @@ import {getValueFromSql, executeSql} from "./sql/MsSqlDb";
 import {replaceAll} from "./utils/replaceAll";
 
 function sqlDateToStr(date: Date): any {
-    return replaceAll(date.toISOString().replace("Z", "").replace("T", " "),"-","/").split(".")[0];
+    return replaceAll(date.toISOString().replace("Z", "").replace("T", " "), "-", "/").split(".")[0];
 }
 
 export function commonApiResponse(req: express.Request, res: express.Response, next: Function) {
@@ -41,8 +76,8 @@ export function commonApiResponse(req: express.Request, res: express.Response, n
         case LOAD_RALLYHEADER_CMD:
             ans = LOAD_RALLYHEADER_handler(decryptedBody);
             break;
-        case LOAD_RALLYLEG_CMD:
-            ans = LOAD_RALLYLEG_handler(decryptedBody);
+        case LOAD_RALLYSPECUCH_CMD:
+            ans = LOAD_RALLYSPECUCH_handler(decryptedBody);
             break;
         case LOAD_RALLYPUNKT_CMD:
             ans = LOAD_RALLYPUNKT_handler(decryptedBody);
@@ -50,9 +85,9 @@ export function commonApiResponse(req: express.Request, res: express.Response, n
         case LOAD_LEGREGISTRATION_CMD:
             ans = LOAD_LEGREGISTRATION_handler(decryptedBody);
             break;
-        case LOAD_PILOTS_CMD:
-            ans = LOAD_PILOTS_handler(decryptedBody);
-            break;
+        // case LOAD_PILOTS_CMD:
+        //     ans = LOAD_PILOTS_handler(decryptedBody);
+        //     break;
         case LOAD_CHECKPOINTS_CMD:
             ans = LOAD_CHECKPOINTS_handler(decryptedBody);
             break;
@@ -143,46 +178,56 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
 }
 
 
-async function LOAD_RALLYLEG_handler(req: ILoadRallyLegReq): Promise<ILoadRallyLegAns> {
-    let replTable = RallyLeg_replTable;
+async function LOAD_RALLYSPECUCH_handler(req: ILoadRallySpecUchReq): Promise<ILoadRallySpecUchAns> {
+    let replTable = RallySpecUch_replTable;
 
     let sql = `select count(1) cnt from ReplLog where ReplTable=${replTable} and DBTS>${req.dbts || "0x00"}`;
 
     let count = await getValueFromSql(sql, "cnt");
 
     if (count === 0)
-        return getInstantPromise({rallyLeg: undefined});
+        return getInstantPromise({rallySpecUch: undefined});
     else {
-
+        // todo нужен фильтр вместо where [Текущий этап]=1
         sql = `
 SELECT 
-  Ключ, Номер, Название, Дата, EngName, Length, TimeZone
-  --(SELECT master.sys.fn_varbintohexstr(max(DBTS)) FROM ReplLog where ReplTable=${replTable}) dbts
+  Ключ, Номер, Название, Дата, Длина, TimeZone, NPP, [Кол.кругов], StageDay, НазваниеАнгл, [Мин.время]
 FROM 
-  [_RallyLeg] where [Текущий этап]=1
+  [_RallySpecUch] where [Текущий этап]=1
   
 SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable=${replTable}  
 `;
 
         let rows = await executeSql(sql);
 
-        let row = rows[0][0];
+        //let row = rows[0][0];
         let dbts = rows[1][0]["dbts"];
 
-        if (row) {
-            let rallyLeg: IRallyLeg = {
-                id: row["Ключ"],
-                num: row["Номер"],
-                name: row["Название"],
-                date: row["Дата"],
-                length: row["Length"],
-                timeZone: row["TimeZone"],
-            };
 
-            return getInstantPromise({rallyLeg: rallyLeg, dbts: dbts});
+        if (rows[0] && rows[0].length>0) {
+            let rallySpecUchArray=rows[0].map((row:any)=>{
+
+                let rallySpecUch: IRallySpecUch = {
+                    id: row["Ключ"],
+                    num: row["Номер"],
+                    name: row["Название"],
+                    date: row["Дата"],
+                    length: row["Длина"],
+                    timeZone: row["TimeZone"],
+                    npp: row["NPP"], // номер по порядку
+                    cycleCount: row["Кол.кругов"], // к-во кругов
+                    stageDay: row["StageDay"],
+                    nameEn: row["НазваниеАнгл"],
+                    minTimeMinutes: row["Мин.время"],
+                };
+                return rallySpecUch;
+
+            });
+
+            return getInstantPromise({rallySpecUch: rallySpecUchArray, dbts: dbts});
         }
         else {
-            return getInstantPromise({rallyLeg: undefined, dbts: dbts});
+            return getInstantPromise({rallySpecUch: undefined, dbts: dbts});
         }
 
     }
@@ -195,22 +240,24 @@ async function LOAD_RALLYPUNKT_handler(req: ILoadRallyPunktReq): Promise<ILoadRa
     let count = await getValueFromSql(sql, "cnt");
 
     if (count === 0)
-        return getInstantPromise({rallyPunkt: undefined});
+        return getInstantPromise({rallyPunkt: undefined as any});
     else {
-
+        // todo нужен фильтр вместо where [Текущий этап]=1
         sql = `
 SELECT 
   _RallyPunkt.Ключ,
   _RallyPunkt.Номер,
   _RallyPunkt.Название,
-  _RallyPunkt.Length
+  _RallyPunkt.Length,
+  _RallyPunkt.NPP
     
 FROM [_RallyPunkt] 
-JOIN _RallyLeg ON _RallyLeg.Ключ=_RallyPunkt._RallyLeg
+JOIN _RallySpecUch ON _RallySpecUch.Ключ=_RallyPunkt._RallySpecUch
 JOIN _UsersLink ON _UsersLink._RallyPunkt=_RallyPunkt.Ключ
 WHERE 
   _UsersLink.Login=${stringAsSql(req.login)} AND
-  _RallyLeg.[Текущий этап]=1
+  _RallySpecUch.[Текущий этап]=1 
+ORDER BY _RallyPunkt.NPP, _RallyPunkt.[№ повтора проезда]  
 
 SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable IN (${replTable},${RallyPunkt_replTable})  
 `;
@@ -219,22 +266,30 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
 
         //console.log("rows", rows);
 
-        let row = rows[0][0];
+        //let row = rows[0][0];
         let dbts = rows[1][0]["dbts"];
 
-        if (row) {
-            let rallyPunkt: IRallyPunkt = {
-                id: row["Ключ"],
-                num: row["Номер"],
-                name: row["Название"],
-                length: row["Length"],
-            };
+        //if (row) {
 
-            return getInstantPromise({rallyPunkt: rallyPunkt, dbts: dbts});
-        }
-        else {
-            return getInstantPromise({rallyPunkt: undefined, dbts: dbts});
-        }
+            let rallyPunkts:IRallyPunkt[]=rows[0].map((row:any)=>{
+
+                let rallyPunkt: IRallyPunkt = {
+                    id: row["Ключ"],
+                    num: row["Номер"],
+                    name: row["Название"],
+                    length: row["Length"],
+                    NPP: row["NPP"]
+                };
+
+                return rallyPunkt;
+            });
+
+
+            return getInstantPromise({rallyPunkt: rallyPunkts, dbts: dbts});
+        //}
+        //else {
+          //  return getInstantPromise({rallyPunkt: undefined, dbts: dbts});
+        //}
 
     }
 }
@@ -249,19 +304,24 @@ async function LOAD_LEGREGISTRATION_handler(req: ILoadLegRegistrationReq): Promi
         return getInstantPromise({legRegistration: undefined});
     else {
 
+        // todo WHERE _RallySpecUch.[Текущий этап]=1
         sql = `
 SELECT 
   _LegRegistration.Ключ id,
-  _LegRegistration._Pilots pilotId,
+  _LegRegistration.Пилот Пилот,
+  _LegRegistration.ПилотАнгл ПилотАнгл,
   _LegRegistration.RaceNumber raceNumber,
-  _LegRegistration.NPP npp,
-  _LegRegistration.StartTime startTime
+  _LegRegistration.Автомобиль Автомобиль,
+  _LegRegistration.Класс Класс,
+  _LegRegistration.Страна Страна
+  
 FROM _LegRegistration 
-JOIN _RallyLeg ON _RallyLeg.Ключ=_LegRegistration._RallyLeg
+JOIN _RallyHeader ON _RallyHeader.Ключ=_LegRegistration._RallyHeader
+JOIN _RallySpecUch ON _RallySpecUch._RallyHeader=_LegRegistration._RallyHeader
 WHERE 
-  _RallyLeg.[Текущий этап]=1
+  _RallySpecUch.[Текущий этап]=1
 ORDER BY 
-  _LegRegistration.NPP
+  _LegRegistration.RaceNumber
 
 SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable=${replTable}  
 `;
@@ -275,13 +335,23 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
 
         if (regRows) {
             let legRegistration: ILegRegistration[] = regRows.map((item: any) => {
+                // id: number;
+                // pilotName: string;
+                // pilotNameEn: string;
+                // raceNumber: string;
+                // autoName:string;
+                // autoClass:string;
+                // country:string;
 
                 return {
                     id: item["id"],
-                    pilotId: item["pilotId"],
+                    pilotName: item["Пилот"],
+                    pilotNameEn: item["ПилотАнгл"],
                     raceNumber: item["raceNumber"],
-                    npp: item["npp"],
-                    startTime: item["startTime"]
+                    autoName:item["Автомобиль"],
+                    autoClass:item["Класс"],
+                    country:item["Страна"]
+
                 } as ILegRegistration;
 
             });
@@ -295,47 +365,47 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
     }
 }
 
-async function LOAD_PILOTS_handler(req: ILoadPilotsReq): Promise<ILoadPilotsAns> {
-    let replTable = Pilots_replTable;
-
-    let sql = `select count(1) cnt from ReplLog where ReplTable=${replTable} and DBTS>${req.dbts || "0x00"}`;
-    let count = await getValueFromSql(sql, "cnt");
-
-    if (count === 0)
-        return getInstantPromise({pilots: undefined});
-    else {
-
-        sql = `
-SELECT Ключ,Имя,EngName,AutoName FROM _Pilots
-SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable=${replTable}  
-`;
-
-        let rows = await executeSql(sql);
-
-        //console.log("rows", rows);
-
-        let pilotsRows = rows[0];
-        let dbts = rows[1][0]["dbts"];
-
-        if (pilotsRows) {
-            let pilots: IPilot[] = pilotsRows.map((item: any) => {
-                return {
-                    id: item["Ключ"],
-                    name: item["Имя"],
-                    engName: item["EngName"],
-                    autoName: item["AutoName"]
-                } as IPilot;
-
-            });
-
-            return getInstantPromise({pilots: pilots, dbts: dbts});
-        }
-        else {
-            return getInstantPromise({pilots: undefined, dbts: dbts});
-        }
-
-    }
-}
+// async function LOAD_PILOTS_handler(req: ILoadPilotsReq): Promise<ILoadPilotsAns> {
+//     let replTable = Pilots_replTable;
+//
+//     let sql = `select count(1) cnt from ReplLog where ReplTable=${replTable} and DBTS>${req.dbts || "0x00"}`;
+//     let count = await getValueFromSql(sql, "cnt");
+//
+//     if (count === 0)
+//         return getInstantPromise({pilots: undefined});
+//     else {
+//
+//         sql = `
+// SELECT Ключ,Имя,EngName,AutoName FROM _Pilots
+// SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable=${replTable}
+// `;
+//
+//         let rows = await executeSql(sql);
+//
+//         //console.log("rows", rows);
+//
+//         let pilotsRows = rows[0];
+//         let dbts = rows[1][0]["dbts"];
+//
+//         if (pilotsRows) {
+//             let pilots: IPilot[] = pilotsRows.map((item: any) => {
+//                 return {
+//                     id: item["Ключ"],
+//                     name: item["Имя"],
+//                     engName: item["EngName"],
+//                     autoName: item["AutoName"]
+//                 } as IPilot;
+//
+//             });
+//
+//             return getInstantPromise({pilots: pilots, dbts: dbts});
+//         }
+//         else {
+//             return getInstantPromise({pilots: undefined, dbts: dbts});
+//         }
+//
+//     }
+// }
 
 async function LOAD_CHECKPOINTS_handler(req: ILoadCheckPointsReq): Promise<ILoadCheckPointsAns> {
     let replTable = CheckPoint_replTable;
@@ -402,7 +472,7 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
 
 async function SAVE_CHECKPOINTS_handler(req: ISaveCheckPointsReq): Promise<ISaveCheckPointsAns> {
 
-   // console.log("SAVE_CHECKPOINTS_handler",req);
+    // console.log("SAVE_CHECKPOINTS_handler",req);
 
     let sqlBatch = `
  DECLARE @id INT 
