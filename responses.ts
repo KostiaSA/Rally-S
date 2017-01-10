@@ -188,7 +188,6 @@ async function LOAD_RALLYSPECUCH_handler(req: ILoadRallySpecUchReq): Promise<ILo
     if (count === 0)
         return getInstantPromise({rallySpecUch: undefined});
     else {
-        // todo нужен фильтр вместо where [Текущий этап]=1
         sql = `
 SELECT 
   Ключ, Номер, Название, Дата, Длина, TimeZone, NPP, [Кол.кругов], StageDay, НазваниеАнгл, [Мин.время]
@@ -242,7 +241,6 @@ async function LOAD_RALLYPUNKT_handler(req: ILoadRallyPunktReq): Promise<ILoadRa
     if (count === 0)
         return getInstantPromise({rallyPunkt: undefined as any});
     else {
-        // todo нужен фильтр вместо where [Текущий этап]=1
         sql = `
 SELECT 
   _RallyPunkt.Ключ,
@@ -304,7 +302,6 @@ async function LOAD_LEGREGISTRATION_handler(req: ILoadLegRegistrationReq): Promi
         return getInstantPromise({legRegistration: undefined});
     else {
 
-        // todo WHERE _RallySpecUch.[Текущий этап]=1
         sql = `
 SELECT 
   _LegRegistration.Ключ id,
