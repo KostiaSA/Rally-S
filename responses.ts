@@ -488,7 +488,6 @@ async function SAVE_CHECKPOINTS_handler(req: ISaveCheckPointsReq): Promise<ISave
        
 SET @id = -1 
 SET @CheckTime = ${ dateTimeAsSql(item.checkTime) }
-SET @PenaltyTime = ${ dateTimeAsSql(item.penaltyTime) }
 SET @LegRegistration = ${ item.legRegsId }
 SET @RallyPunkt = ${ item.rallyPunktId }
 SET @MobileID = ${ stringAsSql(item.mobileId) }
@@ -502,7 +501,6 @@ IF @id=-1
 BEGIN
   INSERT _CheckPoint ( 
       [CheckTime]
-      ,[PenaltyTime]
       ,[_LegRegistration]
       ,[_RallyPunkt]
       ,[MobileID]
@@ -512,7 +510,6 @@ BEGIN
       )
   VALUES (
       @CheckTime,
-      @PenaltyTime,
       @LegRegistration,
       @RallyPunkt,
       @MobileID,
@@ -525,7 +522,6 @@ ELSE
 BEGIN
   UPDATE _CheckPoint SET
       [CheckTime]=@CheckTime,
-      [PenaltyTime]=@PenaltyTime,
       [_LegRegistration]=@LegRegistration,
       [_RallyPunkt]=@RallyPunkt,
       [MobileID]=@MobileID,
