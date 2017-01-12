@@ -144,11 +144,11 @@ async function LOAD_RALLYHEADER_handler(req: ILoadRallyHeaderReq): Promise<ILoad
     else {
 
         sql = `
-SELECT 
+SELECT TOP 1
   [Ключ],[Номер],[Название],[Дата],[EngName],[Дата окончания],[Место проведения]
-  --(SELECT master.sys.fn_varbintohexstr(max(DBTS)) FROM ReplLog where ReplTable=${replTable}) dbts
 FROM 
-  [_RallyHeader] where [Текущая гонка]=1
+
+[_RallyHeader] WHERE Ключ IN (SELECT _RallyHeader from [_RallySpecUch] where [Текущий этап]=1)
   
 SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable=${replTable}  
 `;
