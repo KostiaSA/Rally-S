@@ -21,6 +21,34 @@ function sortRowsByColumnName(rows: any[], colName: string) {
     });
 }
 
+function getColumnClass(colName: string) {
+    if (colName.startsWith("StartNPP")) {
+        return "start-npp";
+    }
+    else if (colName.startsWith("CheckNPP")) {
+        return "check-npp";
+    }
+    else if (colName.startsWith("FinishNPP")) {
+        return "finish-npp";
+    }
+    else if (colName.startsWith("StartTime")) {
+        return "start-time";
+    }
+    else if (colName.startsWith("CheckTime")) {
+        return "check-time";
+    }
+    else if (colName.startsWith("CheckDiff")) {
+        return "check-diff";
+    }
+    else if (colName.startsWith("CheckGap")) {
+        return "check-gap";
+    }
+    else if (colName.startsWith("FinishTime")) {
+        return "finish-time";
+    }
+
+}
+
 
 export function tabloResponse(req: express.Request, res: express.Response, next: Function) {
     // console.log("tabloResponse", req.body);
@@ -56,10 +84,10 @@ export function tabloResponse(req: express.Request, res: express.Response, next:
 
                     for (let colName of tabloColumns) {
                         if (colName.startsWith("StartNPP") || colName.startsWith("CheckNPP") || colName.startsWith("FinishNPP")) {
-                            tds.push(<th>{colName}</th>);
+                            tds.push(<th className={getColumnClass(colName)}>{colName}</th>);
                         }
-                        if (colName.startsWith("StartTime") || colName.startsWith("CheckTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap")) {
-                            tds.push(<th>{colName}</th>);
+                        if (colName.startsWith("StartTime") || colName.startsWith("CheckTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap") || colName.startsWith("FinishTime")) {
+                            tds.push(<th className={getColumnClass(colName)}>{colName}</th>);
                         }
                     }
 
@@ -76,27 +104,26 @@ export function tabloResponse(req: express.Request, res: express.Response, next:
 
             let renderBodyRows = (): JSX.Element[] => {
 
-                return tabloRows.map((row: any,index:number) => {
+                return tabloRows.map((row: any, index: number) => {
 
                     let renderTds = (): JSX.Element[] => {
                         let tds: JSX.Element[] = [];
 
                         for (let colName of tabloColumns) {
                             if (colName.startsWith("StartNPP") || colName.startsWith("CheckNPP") || colName.startsWith("FinishNPP")) {
-                                tds.push(<td style={{textAlign:"center"}}>{row[colName]}</td>);
+                                tds.push(<td className={getColumnClass(colName)}>{row[colName]}</td>);
                             }
 
-                            if (colName.startsWith("StartTime") || colName.startsWith("CheckTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap")) {
+                            if (colName.startsWith("StartTime") || colName.startsWith("CheckTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap")|| colName.startsWith("FinishTime")) {
                                 let date = row[colName] as Date;
                                 //date=new Date(date.getMilliseconds()+date.getTimezoneOffset()*60000); // убираем time зону
                                 let hh = date.getUTCHours();
                                 let mm = date.getUTCMinutes();
                                 let ss = date.getUTCSeconds();
                                 if (hh === 0 && mm === 0 && ss == 0)
-                                    tds.push(<td style={{textAlign:"center"}}></td>);
+                                    tds.push(<td  className={getColumnClass(colName)}></td>);
                                 else
-                                    tds.push(<td
-                                        style={{textAlign:"center"}}>{pad(hh, 2)}:{pad(mm, 2)}:{pad(ss, 2)}</td>);
+                                    tds.push(<td className={getColumnClass(colName)}>{pad(hh, 2)}:{pad(mm, 2)}:{pad(ss, 2)}</td>);
                             }
 
                         }
@@ -113,10 +140,49 @@ export function tabloResponse(req: express.Request, res: express.Response, next:
             };
 
 
+            let commonStyle = `
+table, th, td { 
+  border: 1px solid silver; /* Рамка вокруг таблицы */
+  border-collapse: collapse; /* Отображать только одинарные линии */
+  
+}
+               
+td, th {
+  text-align: center;
+  font-family: arial;
+  font-size: 13;
+  padding: 3;
+}
+
+.start-npp, .start-time {
+  background-color:white
+}
+
+.check-time {
+  color:forestgreen;
+}
+
+.check-diff {
+  color:dodgerblue;
+}
+
+.check-gap {
+  color:indianred;
+}
+
+.finish-npp, .finish-time {
+  background-color:lemonchiffon
+}
+  
+`;
+
             let x = (
                 <html>
                 <head>
                     <meta charSet="utf-8"/>
+                    <style>
+                        {commonStyle}
+                    </style>
                 </head>
                 <body>
                 <table>
