@@ -5,6 +5,8 @@ export interface IConfig {
     sqlLogin: string;
     sqlPassword: string;
     sqlDatabase: string;
+    port:number;
+    staticPath:string;
 }
 
 // let developDir: IConfig = {
@@ -23,6 +25,8 @@ let cloudDir: IConfig = {
     sqlLogin: "sa",
     sqlPassword: "12KloP09",
     sqlDatabase: "Rally",
+    port:3000,
+    staticPath:"c:/rally/a/www"
 }
 
 

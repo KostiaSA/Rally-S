@@ -6,6 +6,8 @@ import * as cookieParser from "cookie-parser";
 import * as bodyParser from "body-parser";
 import {commonApiResponse} from "./responses";
 import {importFrom1cResponse} from "./1c/importFrom1c";
+import {config} from "./config/config";
+import {tabloResponse} from "./tablo/tablo";
 
 // Modular Route definitions
 //import * as exampleRoute from "./routes/example";
@@ -26,7 +28,7 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(cookieParser());
-app.use(express.static("c:/rally/a/www")); //serve public files
+app.use(express.static(config.staticPath)); //serve public files
 
 console.log(__dirname);
 // Register routes (as middleware layer through express.Router())
@@ -38,8 +40,9 @@ console.log(__dirname);
 // });
 
 app.post('/api', commonApiResponse);
-app.post('/export-j0mgep94p4ati7krh3t0', importFrom1cResponse);
-//app.post('/import-bq9djhhj9m6795ry9o3a', exportTo1cResponse);
+app.post('/api/export', importFrom1cResponse);
+//app.post('/api/import', exportTo1cResponse);
+app.get('/tablo', tabloResponse);
 
 
 // catch 404 and forward to error handler
@@ -51,11 +54,10 @@ app.use((req: express.Request, res: express.Response, next: Function) => {
 });
 
 
-const port = process.env.PORT || 3000;
-app.set("port", port);
+app.set("port", config.port);
 
 app.listen(app.get("port"), () => {
-    console.log("Express server listening on port " + port);
+    console.log("Express server listening on port " + config.port);
 }).on("error", err => {
     console.log("Cannot start server, port most likely in use");
     console.log(err);

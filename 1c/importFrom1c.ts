@@ -4,10 +4,16 @@ import {executeSql} from "../sql/MsSqlDb";
 import * as express from "express";
 
 export function importFrom1cResponse(req: express.Request, res: express.Response, next: Function) {
-    //console.log("api1", req.body);
+    console.log("importFrom1cResponse", req.body);
 
-    res.send(JSON.stringify({}));
+    importFrom1c(req.body)
+        .then(() => {
+            res.send(JSON.stringify({result: "Ok"}));
 
+        })
+        .catch((err: any) => {
+            res.send(JSON.stringify({result: err.toString()}));
+        });
 
 }
 
@@ -68,7 +74,7 @@ DECLARE @LegRegistrationId INT
                     reject("нет свойства 'StageCompetitions[0].StageList'");
                 }
 
-                stageCompetition.StageList.forEach((stage: any, npp:number) => { // этап/спецучасток _RallySpecUch
+                stageCompetition.StageList.forEach((stage: any, npp: number) => { // этап/спецучасток _RallySpecUch
 
                     let specUch_Fields: any[] = [];
                     // "ID": "fa29fa46-7897-4e87-984e-df9848fff974",
@@ -126,7 +132,7 @@ DECLARE @LegRegistrationId INT
                     specUch_Fields.push(["Длина", stage.Length]);
 
                     specUch_Fields.push(["_RallyHeader", "@RallyHeaderId"]);
-                    specUch_Fields.push(["NPP", npp+1]);
+                    specUch_Fields.push(["NPP", npp + 1]);
 
 
                     specUch_sql += `
