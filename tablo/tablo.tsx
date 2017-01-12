@@ -34,17 +34,17 @@ function getColumnClass(colName: string) {
     else if (colName.startsWith("StartTime")) {
         return "start-time";
     }
-    else if (colName.startsWith("CheckTime")) {
-        return "check-time";
-    }
+    // else if (colName.startsWith("CheckTime")) {
+    //     return "check-time";
+    // }
     else if (colName.startsWith("CheckDiff")) {
         return "check-diff";
     }
     else if (colName.startsWith("CheckGap")) {
         return "check-gap";
     }
-    else if (colName.startsWith("FinishTime")) {
-        return "finish-time";
+    else if (colName.startsWith("FinishDiff")) {
+        return "finish-diff"
     }
 
 }
@@ -86,7 +86,7 @@ export function tabloResponse(req: express.Request, res: express.Response, next:
                         if (colName.startsWith("StartNPP") || colName.startsWith("CheckNPP") || colName.startsWith("FinishNPP")) {
                             tds.push(<th className={getColumnClass(colName)}>{colName}</th>);
                         }
-                        if (colName.startsWith("StartTime") || colName.startsWith("CheckTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap") || colName.startsWith("FinishTime")) {
+                        if (colName.startsWith("StartTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap") || colName.startsWith("FinishDiff")) {
                             tds.push(<th className={getColumnClass(colName)}>{colName}</th>);
                         }
                     }
@@ -114,7 +114,7 @@ export function tabloResponse(req: express.Request, res: express.Response, next:
                                 tds.push(<td className={getColumnClass(colName)}>{row[colName]}</td>);
                             }
 
-                            if (colName.startsWith("StartTime") || colName.startsWith("CheckTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap")|| colName.startsWith("FinishTime")) {
+                            if (colName.startsWith("StartTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap")|| colName.startsWith("FinishDiff")) {
                                 let date = row[colName] as Date;
                                 //date=new Date(date.getMilliseconds()+date.getTimezoneOffset()*60000); // убираем time зону
                                 let hh = date.getUTCHours();
