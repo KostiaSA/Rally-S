@@ -91,7 +91,7 @@ FROM
 
     let sql = `
 EXEC [_Rally_РезультатыЭтапа] ${rallyHeaderId}, ${etapNum}, ${suOk}, ${suId}
-SELECT Ключ, RaceNumber, Пилот, Автомобиль FROM _LegRegistration WHERE _RallyHeader=${rallyHeaderId}
+SELECT Ключ, RaceNumber, Пилот, Автомобиль, Страна FROM _LegRegistration WHERE _RallyHeader=${rallyHeaderId}
 `;
 
     executeSql(sql)
@@ -100,15 +100,16 @@ SELECT Ключ, RaceNumber, Пилот, Автомобиль FROM _LegRegistrat
             let legRegRows = result[1];
             let legRegs: any = {};
 
-            legRegRows.forEach((legReg:any)=>{
-                legRegs[legReg.Ключ] = {
+            legRegRows.forEach((legReg: any) => {
+                legRegs[legReg.Ключ.toString()] = {
                     RaceNumber: legReg.RaceNumber,
                     Пилот: legReg.Пилот,
-                    Автомобиль: legReg.Автомобиль
+                    Автомобиль: legReg.Автомобиль,
+                    Страна: legReg.Страна
                 }
             });
 
-            console.log(legRegRows);
+            //console.log(legRegRows);
 
             let tabloRows = result[0];
             //console.log(tabloRows);
@@ -135,17 +136,59 @@ SELECT Ключ, RaceNumber, Пилот, Автомобиль FROM _LegRegistrat
             //let tabloColumns=tabloRows[0].keys();
             //console.log(tabloColumns);
 
+            let renderHeader0Row = (): JSX.Element => {
+
+                let renderTds = (): JSX.Element[] => {
+                    let tds: JSX.Element[] = [];
+
+                    tds.push(<th className="racenumber" colSpan={2}></th>);
+                    //tds.push(<th className="pilot">Пилот</th>);
+
+                    for (let colName of tabloColumns) {
+                        if (colName.startsWith("StartNPP")) {
+                            tds.push(<th className={getColumnClass(colName)} colSpan={2}>Старт XX</th>);
+                        }
+                        if (colName.startsWith("CheckNPP")) {
+                            tds.push(<th className={getColumnClass(colName)} colSpan={3}>XX</th>);
+                        }
+                        if (colName.startsWith("FinishNPP")) {
+                            tds.push(<th className={getColumnClass(colName)} colSpan={2}>Финиш XX</th>);
+                        }
+                        // if (colName.startsWith("StartTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap") || colName.startsWith("FinishDiff")) {
+                        //     if (colName.startsWith("CheckGap"))
+                        //         tds.push(<th className={getColumnClass(colName)}>GAP</th>);
+                        //     else
+                        //         tds.push(<th className={getColumnClass(colName)}>Время</th>);
+                        // }
+                    }
+
+                    return tds;
+                };
+
+                return (
+                    <tr>
+                        {renderTds()}
+                    </tr>
+                );
+            };
+
             let renderHeader1Row = (): JSX.Element => {
 
                 let renderTds = (): JSX.Element[] => {
                     let tds: JSX.Element[] = [];
 
+                    tds.push(<th className="racenumber">Номер</th>);
+                    tds.push(<th className="pilot">Пилот</th>);
+
                     for (let colName of tabloColumns) {
                         if (colName.startsWith("StartNPP") || colName.startsWith("CheckNPP") || colName.startsWith("FinishNPP")) {
-                            tds.push(<th className={getColumnClass(colName)}>{colName}</th>);
+                            tds.push(<th className={getColumnClass(colName)}>Место</th>);
                         }
                         if (colName.startsWith("StartTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap") || colName.startsWith("FinishDiff")) {
-                            tds.push(<th className={getColumnClass(colName)}>{colName}</th>);
+                            if (colName.startsWith("CheckGap"))
+                                tds.push(<th className={getColumnClass(colName)}>GAP</th>);
+                            else
+                                tds.push(<th className={getColumnClass(colName)}>Время</th>);
                         }
                     }
 
@@ -166,6 +209,14 @@ SELECT Ключ, RaceNumber, Пилот, Автомобиль FROM _LegRegistrat
 
                     let renderTds = (): JSX.Element[] => {
                         let tds: JSX.Element[] = [];
+
+                        let legRegId = row["_LegRegistration"];
+                        console.log(legRegId);
+                        let pilot = legRegs[legRegId.toString()];
+                        console.log(pilot);
+
+                        tds.push(<td className="racenumber">{pilot.RaceNumber}</td>);
+                        tds.push(<td className="pilot">{pilot.Пилот + " " + pilot.Страна}</td>);
 
                         for (let colName of tabloColumns) {
                             if (colName.startsWith("StartNPP") || colName.startsWith("CheckNPP") || colName.startsWith("FinishNPP")) {
@@ -213,24 +264,28 @@ td, th {
   padding: 3;
 }
 
-.start-npp, .start-time {
-  background-color:white
+th {
+  background-color:#f3f3f3
+}
+
+.finish-npp, .finish-diff {
+  background-color:#f3f3f3
 }
 
 .check-time {
   color:forestgreen;
 }
 
-.check-diff {
-  color:dodgerblue;
+.check-diff, .check-npp {
+  color:forestgreen;
 }
 
 .check-gap {
   color:indianred;
 }
 
-.finish-npp, .finish-time {
-  background-color:lemonchiffon
+.pilot, .racenumber{
+  color:teal  
 }
   
 `;
@@ -246,6 +301,7 @@ td, th {
                 <body>
                 <table>
                     <thead>
+                    {renderHeader0Row()}
                     {renderHeader1Row()}
                     </thead>
                     <tbody>
