@@ -67,9 +67,9 @@ function getColumnClass(colName: string) {
 
 }
 
-function getUrlParams(url:string) {
-    var vars:any = {}, hash;
-    var hashes = url.slice(window.location.href.indexOf('?') + 1).split('&');
+function getUrlParams(url: string) {
+    var vars: any = {}, hash;
+    var hashes = url.slice(url.indexOf('?') + 1).split('&');
     for (var i = 0; i < hashes.length; i++) {
         hash = hashes[i].split('=');
         if (hash[1])
@@ -81,7 +81,7 @@ function getUrlParams(url:string) {
 export async function tabloResponse(req: express.Request, res: express.Response, next: Function) {
     // console.log("tabloResponse", req.body);
 
-    let urlParams=getUrlParams(req.originalUrl);
+    let urlParams = getUrlParams(req.originalUrl);
     console.log(urlParams);
 
 
@@ -204,12 +204,36 @@ SELECT Ключ, Номер, Название FROM _RallyPunkt
                 let renderTds = (): JSX.Element[] => {
                     let tds: JSX.Element[] = [];
 
-                    tds.push(<th className="racenumber">Номер</th>);
-                    tds.push(<th className="pilot">Пилот</th>);
+                    let ascSortMarker =<div><i className="fa fa-sort-asc" style={{fontSize:18, padding:1 }}></i></div>;
+                    let descSortMarker =<div><i className="fa fa-sort-desc" style={{fontSize:18, padding:1 }}></i>
+                    </div>;
+
+                    let raceSortMarker: any = null;
+                    if (urlParams["sort"] === "racenumber")
+                        raceSortMarker = ascSortMarker;
+                    else if (urlParams["sort"] === "_racenumber")
+                        raceSortMarker = descSortMarker;
+
+                    tds.push(<th className="racenumber sorted" data-sort="racenumber">Номер{raceSortMarker}</th>);
+
+                    let pilotSortMarker: any = null;
+                    if (urlParams["sort"] === "pilot")
+                        pilotSortMarker = ascSortMarker;
+                    else if (urlParams["sort"] === "_pilot")
+                        pilotSortMarker = descSortMarker;
+                    tds.push(<th className="pilot sorted" data-sort="pilot">Пилот{pilotSortMarker}</th>);
 
                     for (let colName of tabloColumns) {
                         if (colName.startsWith("StartNPP") || colName.startsWith("CheckNPP") || colName.startsWith("FinishNPP")) {
-                            tds.push(<th className={getColumnClass(colName)}>Место</th>);
+
+                            let checkSortMarker: any = null;
+                            if (urlParams["sort"] === colName)
+                                checkSortMarker = ascSortMarker;
+                            else if (urlParams["sort"] === "_" + colName)
+                                checkSortMarker = descSortMarker;
+
+                            tds.push(<th className={getColumnClass(colName)+" sorted"} data-sort={colName}>
+                                Место{checkSortMarker}</th>);
                         }
                         if (colName.startsWith("StartTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap") || colName.startsWith("FinishDiff")) {
                             if (colName.startsWith("CheckGap"))
@@ -313,6 +337,10 @@ th {
   color:teal  
 }
   
+.sorted {
+      cursor: pointer;
+}
+  
 `;
             let jsText = `
  function sortClick(colName){
@@ -328,6 +356,7 @@ th {
                     <style>
                         {commonStyle}
                     </style>
+                    <script src="https://use.fontawesome.com/609b886dfd.js"></script>
                     <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
                     <script src="js/tablo.js"></script>
 
