@@ -78,11 +78,26 @@ function getUrlParams(url: string) {
     return vars;
 }
 
+let cachedResult: any;
+let cachedTime: Date;
+
+function isCacheTimeOut(): boolean {
+    if (!cachedResult)
+        return true;
+
+    let timeSpanMillisec = (new Date()).getTime()  - cachedTime.getTime();
+
+    console.log("cache sec",timeSpanMillisec/1000);
+
+    return timeSpanMillisec / 1000 > 10; // больше 30 sec
+}
+
+
 export async function tabloResponse(req: express.Request, res: express.Response, next: Function) {
     // console.log("tabloResponse", req.body);
 
     let urlParams = getUrlParams(req.originalUrl);
-    console.log(urlParams);
+    //console.log(urlParams);
 
 
     let preSql = `
@@ -109,8 +124,20 @@ SELECT Ключ, RaceNumber, Пилот, Автомобиль, Страна FROM
 SELECT Ключ, Номер, Название FROM _RallyPunkt
 `;
 
+    if (!isCacheTimeOut())
+        sql = "select 1";
+
+    console.log(sql);
+
     executeSql(sql)
         .then((result: any) => {
+
+            if (!isCacheTimeOut())
+                result = cachedResult;
+            else {
+                cachedResult = result;
+                cachedTime = new Date();
+            }
 
             let legRegRows = result[1];
             let legRegs: any = {};
@@ -154,8 +181,12 @@ SELECT Ключ, Номер, Название FROM _RallyPunkt
                 }
             }
 
-
-            sortRowsByColumnName(tabloRows, "CheckNPP22", startColName, false);
+            if (urlParams["sort"]) {
+                if (urlParams["sort"].startsWith("_"))
+                    sortRowsByColumnName(tabloRows, urlParams["sort"].substr(1), startColName, true);
+                else
+                    sortRowsByColumnName(tabloRows, urlParams["sort"], startColName, false);
+            }
 
 
             //let tabloColumns=tabloRows[0].keys();
@@ -362,7 +393,6 @@ th {
 
                 </head>
                 <body>
-                <button data-sort="qqq">test</button>
                 <table>
                     <thead>
                     {renderHeader0Row()}
