@@ -12,7 +12,7 @@ function pad(num: number, size: number) {
     return s.substr(s.length - size);
 }
 
-function sortRowsByColumnName(rows: any[], colName: string, colName2: string) {
+function sortRowsByColumnName(rows: any[], colName: string, colName2: string, desc: boolean = false) {
     rows.sort((a: any, b: any) => {
         let aa = Number.parseInt(a[colName]);
         let bb = Number.parseInt(b[colName]);
@@ -32,7 +32,10 @@ function sortRowsByColumnName(rows: any[], colName: string, colName2: string) {
             bb2 = 100000;
 
         //console.log(aa + aa2, bb + bb2);
-        return (aa + aa2) - (bb + bb2);
+        if (!desc)
+            return (aa + aa2) - (bb + bb2);
+        else
+            return (bb + bb2) - (aa + aa2);
     });
 }
 
@@ -65,14 +68,47 @@ function getColumnClass(colName: string) {
 }
 
 
-export function tabloResponse(req: express.Request, res: express.Response, next: Function) {
+export async function tabloResponse(req: express.Request, res: express.Response, next: Function) {
     // console.log("tabloResponse", req.body);
 
+    let preSql = `
+SELECT TOP 1
+  [Ключ]
+FROM 
+  [_RallyHeader] WHERE Ключ IN (SELECT _RallyHeader from [_RallySpecUch] where [Текущий этап]=1)
+`;
+    let preResult = await executeSql(preSql);
 
-    let sql = "EXEC [_Rally_РезультатыЭтапа] 5, 1, 0, 4";
+
+    let rallyHeaderId = preResult[0][0].Ключ;
+    let etapNum = 1;
+    let suOk = 0;
+    let suId = 0;
+    // DECLARE @RallyID INT -- Ключ таблицы _RallyHeader
+    // DECLARE @EtapNum INT -- Номер дня гонки [StageDay] в таблице [_RallySpecUch]
+    // DECLARE @SUOk Bit -- итог подводить за день (@SUOk=0) или по спецучастку (@SUOk=1)
+    // DECLARE @SUID INT -- Ключ таблицы [_RallySpecUch] - если @SUOk=1
+
+    let sql = `
+EXEC [_Rally_РезультатыЭтапа] ${rallyHeaderId}, ${etapNum}, ${suOk}, ${suId}
+SELECT Ключ, RaceNumber, Пилот, Автомобиль FROM _LegRegistration WHERE _RallyHeader=${rallyHeaderId}
+`;
 
     executeSql(sql)
         .then((result: any) => {
+
+            let legRegRows = result[1];
+            let legRegs: any = {};
+
+            legRegRows.forEach((legReg:any)=>{
+                legRegs[legReg.Ключ] = {
+                    RaceNumber: legReg.RaceNumber,
+                    Пилот: legReg.Пилот,
+                    Автомобиль: legReg.Автомобиль
+                }
+            });
+
+            console.log(legRegRows);
 
             let tabloRows = result[0];
             //console.log(tabloRows);
@@ -93,7 +129,7 @@ export function tabloResponse(req: express.Request, res: express.Response, next:
             }
 
 
-            sortRowsByColumnName(tabloRows, "CheckNPP22", startColName);
+            sortRowsByColumnName(tabloRows, "CheckNPP22", startColName, false);
 
 
             //let tabloColumns=tabloRows[0].keys();
