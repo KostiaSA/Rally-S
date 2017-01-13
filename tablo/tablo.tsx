@@ -67,9 +67,23 @@ function getColumnClass(colName: string) {
 
 }
 
+function getUrlParams(url:string) {
+    var vars:any = {}, hash;
+    var hashes = url.slice(window.location.href.indexOf('?') + 1).split('&');
+    for (var i = 0; i < hashes.length; i++) {
+        hash = hashes[i].split('=');
+        if (hash[1])
+            vars[hash[0]] = hash[1];
+    }
+    return vars;
+}
 
 export async function tabloResponse(req: express.Request, res: express.Response, next: Function) {
     // console.log("tabloResponse", req.body);
+
+    let urlParams=getUrlParams(req.originalUrl);
+    console.log(urlParams);
+
 
     let preSql = `
 SELECT TOP 1
@@ -92,6 +106,7 @@ FROM
     let sql = `
 EXEC [_Rally_РезультатыЭтапа] ${rallyHeaderId}, ${etapNum}, ${suOk}, ${suId}
 SELECT Ключ, RaceNumber, Пилот, Автомобиль, Страна FROM _LegRegistration WHERE _RallyHeader=${rallyHeaderId}
+SELECT Ключ, Номер, Название FROM _RallyPunkt
 `;
 
     executeSql(sql)
@@ -109,7 +124,17 @@ SELECT Ключ, RaceNumber, Пилот, Автомобиль, Страна FROM
                 }
             });
 
-            //console.log(legRegRows);
+            let punktRows = result[2];
+            let punkts: any = {};
+
+            punktRows.forEach((punktRow: any) => {
+                punkts[punktRow.Ключ.toString()] = {
+                    Номер: punktRow.Номер,
+                    Название: punktRow.Название,
+                }
+            });
+
+            // console.log(punkts);
 
             let tabloRows = result[0];
             //console.log(tabloRows);
@@ -146,13 +171,15 @@ SELECT Ключ, RaceNumber, Пилот, Автомобиль, Страна FROM
 
                     for (let colName of tabloColumns) {
                         if (colName.startsWith("StartNPP")) {
-                            tds.push(<th className={getColumnClass(colName)} colSpan={2}>Старт XX</th>);
+                            tds.push(<th className={getColumnClass(colName)} colSpan={2}>Старт</th>);
                         }
                         if (colName.startsWith("CheckNPP")) {
-                            tds.push(<th className={getColumnClass(colName)} colSpan={3}>XX</th>);
+                            let punktId = colName.replace("CheckNPP", "");
+                            tds.push(<th className={getColumnClass(colName)}
+                                         colSpan={3}>{punkts[punktId].Номер + " " + punkts[punktId].Название}</th>);
                         }
                         if (colName.startsWith("FinishNPP")) {
-                            tds.push(<th className={getColumnClass(colName)} colSpan={2}>Финиш XX</th>);
+                            tds.push(<th className={getColumnClass(colName)} colSpan={2}>Финиш</th>);
                         }
                         // if (colName.startsWith("StartTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap") || colName.startsWith("FinishDiff")) {
                         //     if (colName.startsWith("CheckGap"))
@@ -211,12 +238,10 @@ SELECT Ключ, RaceNumber, Пилот, Автомобиль, Страна FROM
                         let tds: JSX.Element[] = [];
 
                         let legRegId = row["_LegRegistration"];
-                        console.log(legRegId);
                         let pilot = legRegs[legRegId.toString()];
-                        console.log(pilot);
 
                         tds.push(<td className="racenumber">{pilot.RaceNumber}</td>);
-                        tds.push(<td className="pilot">{pilot.Пилот + " " + pilot.Страна}</td>);
+                        tds.push(<td className="pilot">{pilot.Пилот}<br/>({pilot.Страна})</td>);
 
                         for (let colName of tabloColumns) {
                             if (colName.startsWith("StartNPP") || colName.startsWith("CheckNPP") || colName.startsWith("FinishNPP")) {
@@ -289,7 +314,13 @@ th {
 }
   
 `;
-
+            let jsText = `
+ function sortClick(colName){
+   var parser = document.createElement('a');
+   parser.href = "http://example.com:3000/pathname/?search12=npp12";
+   console.log(parser.search12);
+ }
+`;
             let x = (
                 <html>
                 <head>
@@ -297,8 +328,12 @@ th {
                     <style>
                         {commonStyle}
                     </style>
+                    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+                    <script src="js/tablo.js"></script>
+
                 </head>
                 <body>
+                <button data-sort="qqq">test</button>
                 <table>
                     <thead>
                     {renderHeader0Row()}
