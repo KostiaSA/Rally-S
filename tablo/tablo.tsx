@@ -12,12 +12,27 @@ function pad(num: number, size: number) {
     return s.substr(s.length - size);
 }
 
-function sortRowsByColumnName(rows: any[], colName: string) {
+function sortRowsByColumnName(rows: any[], colName: string, colName2: string) {
     rows.sort((a: any, b: any) => {
         let aa = Number.parseInt(a[colName]);
         let bb = Number.parseInt(b[colName]);
-        //console.log(aa, bb);
-        return aa - bb;
+        let aa2 = Number.parseInt(a[colName2]);
+        let bb2 = Number.parseInt(b[colName2]);
+        if (isNaN(aa))
+            aa = 100000;
+        if (isNaN(bb))
+            bb = 100000;
+
+        aa *= 1000000;
+        bb *= 1000000;
+
+        if (isNaN(aa2))
+            aa2 = 100000;
+        if (isNaN(bb2))
+            bb2 = 100000;
+
+        //console.log(aa + aa2, bb + bb2);
+        return (aa + aa2) - (bb + bb2);
     });
 }
 
@@ -68,12 +83,19 @@ export function tabloResponse(req: express.Request, res: express.Response, next:
             }
 
             // первичная сортировка
+            let startColName = "";
             for (var colName in tabloRows[0]) {
                 if (colName.startsWith("StartNPP")) {
-                    sortRowsByColumnName(tabloRows, colName);
+                    startColName = colName;
+                    //sortRowsByColumnName(tabloRows, colName);
                     break;
                 }
             }
+
+
+            sortRowsByColumnName(tabloRows, "CheckNPP22", startColName);
+
+
             //let tabloColumns=tabloRows[0].keys();
             //console.log(tabloColumns);
 
@@ -114,16 +136,17 @@ export function tabloResponse(req: express.Request, res: express.Response, next:
                                 tds.push(<td className={getColumnClass(colName)}>{row[colName]}</td>);
                             }
 
-                            if (colName.startsWith("StartTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap")|| colName.startsWith("FinishDiff")) {
+                            if (colName.startsWith("StartTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap") || colName.startsWith("FinishDiff")) {
                                 let date = row[colName] as Date;
                                 //date=new Date(date.getMilliseconds()+date.getTimezoneOffset()*60000); // убираем time зону
                                 let hh = date.getUTCHours();
                                 let mm = date.getUTCMinutes();
                                 let ss = date.getUTCSeconds();
                                 if (hh === 0 && mm === 0 && ss == 0)
-                                    tds.push(<td  className={getColumnClass(colName)}></td>);
+                                    tds.push(<td className={getColumnClass(colName)}></td>);
                                 else
-                                    tds.push(<td className={getColumnClass(colName)}>{pad(hh, 2)}:{pad(mm, 2)}:{pad(ss, 2)}</td>);
+                                    tds.push(<td
+                                        className={getColumnClass(colName)}>{pad(hh, 2)}:{pad(mm, 2)}:{pad(ss, 2)}</td>);
                             }
 
                         }
