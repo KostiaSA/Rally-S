@@ -8,6 +8,7 @@ import {commonApiResponse} from "./responses";
 import {importFrom1cResponse} from "./1c/importFrom1c";
 import {config} from "./config/config";
 import {tabloResponse} from "./tablo/tablo";
+import {exportTo1cResponse} from "./1c/exportTo1c";
 
 // Modular Route definitions
 //import * as exampleRoute from "./routes/example";
@@ -41,7 +42,7 @@ console.log(__dirname);
 
 app.post('/api', commonApiResponse);
 app.post('/api/export', importFrom1cResponse);
-//app.post('/api/import', exportTo1cResponse);
+app.post('/api/import', exportTo1cResponse);
 app.get('/tablo', tabloResponse);
 
 
