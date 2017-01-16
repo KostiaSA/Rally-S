@@ -27,8 +27,6 @@ function sortRowsByColumnName(rows: any[], colName: string, colName2: string, de
             let lastNameB = pilotB.split(" ")[1];
             if (!lastNameB)
                 lastNameB = pilotB;
-            //console.log(a[colName],a[colName].split(" ")[1]);
-            //console.log(pilotA);
             if (desc)
                 return -lastNameA.localeCompare(lastNameB);
             else
@@ -74,9 +72,6 @@ function getColumnClass(colName: string) {
     else if (colName.startsWith("StartTime")) {
         return "start-time";
     }
-    // else if (colName.startsWith("CheckTime")) {
-    //     return "check-time";
-    // }
     else if (colName.startsWith("CheckDiff")) {
         return "check-diff";
     }
@@ -135,6 +130,7 @@ FROM
     let etapNum = 1;
     let suOk = 0;
     let suId = 0;
+
     // DECLARE @RallyID INT -- Ключ таблицы _RallyHeader
     // DECLARE @EtapNum INT -- Номер дня гонки [StageDay] в таблице [_RallySpecUch]
     // DECLARE @SUOk Bit -- итог подводить за день (@SUOk=0) или по спецучастку (@SUOk=1)
@@ -182,11 +178,7 @@ SELECT Ключ, Номер, Название FROM _RallyPunkt
                 }
             });
 
-            // console.log(punkts);
-
             let tabloRows = result[0];
-            //console.log(tabloRows);
-            //console.log(tabloRows[0]);
             let tabloColumns: any[] = [];
             for (var colName in tabloRows[0]) {
                 tabloColumns.push(colName);
@@ -197,7 +189,6 @@ SELECT Ключ, Номер, Название FROM _RallyPunkt
             for (var colName in tabloRows[0]) {
                 if (colName.startsWith("StartNPP")) {
                     startColName = colName;
-                    //sortRowsByColumnName(tabloRows, colName);
                     break;
                 }
             }
@@ -209,17 +200,12 @@ SELECT Ключ, Номер, Название FROM _RallyPunkt
                     sortRowsByColumnName(tabloRows, urlParams["sort"], startColName, false);
             }
 
-
-            //let tabloColumns=tabloRows[0].keys();
-            //console.log(tabloColumns);
-
             let renderHeader0Row = (): JSX.Element => {
 
                 let renderTds = (): JSX.Element[] => {
                     let tds: JSX.Element[] = [];
 
                     tds.push(<th className="racenumber" colSpan={2}></th>);
-                    //tds.push(<th className="pilot">Пилот</th>);
 
                     for (let colName of tabloColumns) {
                         if (colName.startsWith("StartNPP")) {
@@ -233,12 +219,6 @@ SELECT Ключ, Номер, Название FROM _RallyPunkt
                         if (colName.startsWith("FinishNPP")) {
                             tds.push(<th className={getColumnClass(colName)} colSpan={2}>Финиш</th>);
                         }
-                        // if (colName.startsWith("StartTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap") || colName.startsWith("FinishDiff")) {
-                        //     if (colName.startsWith("CheckGap"))
-                        //         tds.push(<th className={getColumnClass(colName)}>GAP</th>);
-                        //     else
-                        //         tds.push(<th className={getColumnClass(colName)}>Время</th>);
-                        // }
                     }
 
                     return tds;
@@ -326,7 +306,6 @@ SELECT Ключ, Номер, Название FROM _RallyPunkt
 
                             if (colName.startsWith("StartTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap") || colName.startsWith("FinishDiff")) {
                                 let date = row[colName] as Date;
-                                //date=new Date(date.getMilliseconds()+date.getTimezoneOffset()*60000); // убираем time зону
                                 let hh = date.getUTCHours();
                                 let mm = date.getUTCMinutes();
                                 let ss = date.getUTCSeconds();
