@@ -12,8 +12,30 @@ function pad(num: number, size: number) {
     return s.substr(s.length - size);
 }
 
+let legRegs: any = {};
+
 function sortRowsByColumnName(rows: any[], colName: string, colName2: string, desc: boolean = false) {
     rows.sort((a: any, b: any) => {
+
+        if (colName === "pilot") {
+            let pilotA = legRegs[a["_LegRegistration"].toString()].Пилот;
+            let pilotB = legRegs[b["_LegRegistration"].toString()].Пилот;
+
+            let lastNameA = pilotA.split(" ")[1];
+            if (!lastNameA)
+                lastNameA = pilotA;
+            let lastNameB = pilotB.split(" ")[1];
+            if (!lastNameB)
+                lastNameB = pilotB;
+            //console.log(a[colName],a[colName].split(" ")[1]);
+            //console.log(pilotA);
+            if (desc)
+                return -lastNameA.localeCompare(lastNameB);
+            else
+                return lastNameA.localeCompare(lastNameB);
+        }
+
+
         let aa = Number.parseInt(a[colName]);
         let bb = Number.parseInt(b[colName]);
         let aa2 = Number.parseInt(a[colName2]);
@@ -85,9 +107,9 @@ function isCacheTimeOut(): boolean {
     if (!cachedResult)
         return true;
 
-    let timeSpanMillisec = (new Date()).getTime()  - cachedTime.getTime();
+    let timeSpanMillisec = (new Date()).getTime() - cachedTime.getTime();
 
-    console.log("cache sec",timeSpanMillisec/1000);
+    console.log("cache sec", timeSpanMillisec / 1000);
 
     return timeSpanMillisec / 1000 > 10; // больше 30 sec
 }
@@ -140,7 +162,6 @@ SELECT Ключ, Номер, Название FROM _RallyPunkt
             }
 
             let legRegRows = result[1];
-            let legRegs: any = {};
 
             legRegRows.forEach((legReg: any) => {
                 legRegs[legReg.Ключ.toString()] = {
