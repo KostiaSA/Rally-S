@@ -375,13 +375,13 @@ th {
 }
   
 `;
-            let jsText = `
- function sortClick(colName){
-   var parser = document.createElement('a');
-   parser.href = "http://example.com:3000/pathname/?search12=npp12";
-   console.log(parser.search12);
- }
-`;
+//             let jsText = `
+//  function sortClick(colName){
+//    var parser = document.createElement('a');
+//    parser.href = "http://example.com:3000/pathname/?search12=npp12";
+//    console.log(parser.search12);
+//  }
+// `;
             let x = (
                 <html>
                 <head>
