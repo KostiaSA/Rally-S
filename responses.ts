@@ -404,6 +404,8 @@ SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable
 //     }
 // }
 
+
+// todo надо загружать чекпоинты со всех пунктов
 async function LOAD_CHECKPOINTS_handler(req: ILoadCheckPointsReq): Promise<ILoadCheckPointsAns> {
     let replTable = CheckPoint_replTable;
 

@@ -147,6 +147,8 @@ SELECT Ключ, Номер, Название FROM _RallyPunkt
 
     console.log(sql);
 
+    // todo сортировка не работает при нажатии на стрелку
+
     executeSql(sql)
         .then((result: any) => {
 

@@ -2,6 +2,7 @@ import {stringAsSql, guidAsSql, dateAsSql} from "../sql/SqlCore";
 import {emitFieldList, emitFieldList_forUpdate} from "../sql/emitSql";
 import {executeSql} from "../sql/MsSqlDb";
 import * as express from "express";
+import * as moment from "moment";
 
 export function importFrom1cResponse(req: express.Request, res: express.Response, next: Function) {
     console.log("importFrom1cResponse", req.body);
@@ -146,6 +147,21 @@ BEGIN
   UPDATE _RallySpecUch SET ${ emitFieldList_forUpdate(specUch_Fields)} WHERE ReplGuid=${guidAsSql(stage.ID)}
 END                 
 `;
+
+                    if (stage.ResultList) {
+                        stage.ResultList.forEach((result: any, index: number) => { // этап/спецучасток _RallySpecUch
+                            // result это
+                            // {
+                            //     "NumberCrew": 200,
+                            //     "Start": "10:05:00",
+                            //     "Finish": "10:08:47"
+                            // },
+
+                            specUch_sql += `EXEC _import_startovka @SpecUchId, ${result.NumberCrew}, '${moment(stage.Date).format("YYYYMMDD")} ${result.Start}'`+"\n";
+
+                        });
+                    }
+
 
                 });
 
