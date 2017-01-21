@@ -251,7 +251,7 @@ SELECT Ключ, Номер, Название FROM _RallyPunkt
                                          colSpan={3}>{punkts[punktId].Номер + " " + punkts[punktId].Название}</th>);
                         }
                         if (colName.startsWith("FinishNPP")) {
-                            tds.push(<th className={getColumnClass(colName)} colSpan={2}>Финиш</th>);
+                            tds.push(<th className={getColumnClass(colName)} colSpan={3}>Финиш</th>);
                         }
                     }
 
@@ -301,8 +301,8 @@ SELECT Ключ, Номер, Название FROM _RallyPunkt
                             tds.push(<th className={getColumnClass(colName)+" sorted"} data-sort={colName}>
                                 Место{checkSortMarker}</th>);
                         }
-                        if (colName.startsWith("StartTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap") || colName.startsWith("FinishDiff")) {
-                            if (colName.startsWith("CheckGap"))
+                        if (colName.startsWith("StartTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap") || colName.startsWith("FinishDiff") || colName.startsWith("FinishGap")) {
+                            if (colName.startsWith("CheckGap") || colName.startsWith("FinishGap"))
                                 tds.push(<th className={getColumnClass(colName)}>GAP</th>);
                             else
                                 tds.push(<th className={getColumnClass(colName)}>Время</th>);
@@ -338,7 +338,7 @@ SELECT Ключ, Номер, Название FROM _RallyPunkt
                                 tds.push(<td className={getColumnClass(colName)}>{row[colName]}</td>);
                             }
 
-                            if (colName.startsWith("StartTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap") || colName.startsWith("FinishDiff")) {
+                            if (colName.startsWith("StartTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap") || colName.startsWith("FinishDiff") || colName.startsWith("FinishGap")) {
                                 let date = row[colName] as Date;
                                 let hh = date.getUTCHours();
                                 let mm = date.getUTCMinutes();

@@ -29,8 +29,8 @@ export function importFrom1cResponse(req: express.Request, res: express.Response
 export async function importFrom1c(json: any): Promise<void> {
 
     var fs = require('fs');
-    fs.writeFile("/rally/importFrom1c_"+getRandomString(10)+".json", JSON.stringify(json), function(err:any) {
-        if(err) {
+    fs.writeFile("/rally/importFrom1c_" + getRandomString(10) + ".json", JSON.stringify(json), function (err: any) {
+        if (err) {
             return console.log(err);
         }
         console.log("Import file was saved!");
@@ -61,9 +61,8 @@ export async function importFrom1c(json: any): Promise<void> {
                 reject("нет свойства 'Race.EndDate'");
             raceFields.push(["[Дата окончания]", stringAsSql(json.Race.EndDate)]);
 
-            if (!json.Race.Location)
-                reject("нет свойства 'Race.Location'");
-            raceFields.push(["[Место проведения]", stringAsSql(json.Race.Location)]);
+            if (json.Race.Location)
+                raceFields.push(["[Место проведения]", stringAsSql(json.Race.Location)]);
 
             if (!json.Race.DateFirstStage)
                 reject("нет свойства 'Race.DateFirstStage'");
@@ -84,9 +83,9 @@ DECLARE @LegRegistrationId INT
             if (!json.StageCompetitions)
                 reject("нет свойства 'StageCompetitions'");
 
-            json.StageCompetitions=[json.StageCompetitions[0]];  // todo убрать к следующей гонке
+            json.StageCompetitions = [json.StageCompetitions[0]];  // todo убрать к следующей гонке
 
-            json.StageCompetitions.forEach((stageCompetition: any, stageCompetitionIndex:number) => {
+            json.StageCompetitions.forEach((stageCompetition: any, stageCompetitionIndex: number) => {
 
                 //////// спецучасток ///////////////////
                 if (!stageCompetition.StageList) {
@@ -175,7 +174,10 @@ END
                             //     "Finish": "10:08:47"
                             // },
 
-                            specUch_sql += `EXEC _import_startovka @SpecUchId, ${result.NumberCrew}, '${moment(stage.Date).format("YYYYMMDD")} ${result.Start}'`+"\n";
+                            if (result.Start && result.Start !== "")
+                                specUch_sql += `EXEC _import_startovka @SpecUchId, ${result.NumberCrew}, '${moment(stage.Date).format("YYYYMMDD")} ${result.Start}'` + "\n";
+                            if (result.Finish && result.Finish !== "")
+                                specUch_sql += `EXEC _import_finish @SpecUchId, ${result.NumberCrew}, '${moment(stage.Date).format("YYYYMMDD")} ${result.Finish}'` + "\n";
 
                         });
                     }
@@ -236,7 +238,7 @@ END
                         return;
                     }
                     crew_Fields.push(["RaceNumber", stringAsSql(crew.Number.toString())]);
-                    console.log("RaceNumber-start",crew.Number);
+                    console.log("RaceNumber-start", crew.Number);
 
                     if (crew.Pilot === undefined) {
                         reject("нет свойства 'StageCompetitions[0].CrewList[0].Pilot'");
@@ -280,7 +282,7 @@ BEGIN
 END                 
 `;
 
-                    console.log("RaceNumber-fin",crew.Number);
+                    console.log("RaceNumber-fin", crew.Number);
 
 
                 });
