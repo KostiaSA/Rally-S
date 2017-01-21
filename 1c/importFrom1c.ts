@@ -83,7 +83,10 @@ DECLARE @LegRegistrationId INT
 
             if (!json.StageCompetitions)
                 reject("нет свойства 'StageCompetitions'");
-            json.StageCompetitions.forEach((stageCompetition: any) => {
+
+            json.StageCompetitions=[json.StageCompetitions[0]];  // todo убрать к следующей гонке
+
+            json.StageCompetitions.forEach((stageCompetition: any, stageCompetitionIndex:number) => {
 
                 //////// спецучасток ///////////////////
                 if (!stageCompetition.StageList) {
@@ -300,12 +303,9 @@ BEGIN
 END                 
             
 ${specUch_sql}     
-       
-EXEC _удаление_2х_значников
             
 `;
 
-// todo убрать EXEC _удаление_2х_значников
 
             console.log(sql);
 
