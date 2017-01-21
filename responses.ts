@@ -419,19 +419,34 @@ async function LOAD_CHECKPOINTS_handler(req: ILoadCheckPointsReq): Promise<ILoad
         //console.log("LOAD_CHECKPOINTS_handler", req.dbts);
 
         sql = `
-SELECT [Ключ]
-      ,[CheckTime]
-      ,[PenaltyTime]
-      ,[_LegRegistration]
-      ,[_RallyPunkt]
-      ,[ReplGuid]
-      ,[MobileID]
-      ,[MobileLogin]
-      ,[MobileDevice]
-      ,[MobileTime]
-FROM 
-  [_CheckPoint]
-WHERE _RallyPunkt=${req.rallyPunktId}  
+IF (${req.rallyPunktId}>0)       
+    SELECT [Ключ]
+          ,[CheckTime]
+          ,[PenaltyTime]
+          ,[_LegRegistration]
+          ,[_RallyPunkt]
+          ,[ReplGuid]
+          ,[MobileID]
+          ,[MobileLogin]
+          ,[MobileDevice]
+          ,[MobileTime]
+    FROM 
+      [_CheckPoint]
+    WHERE _RallyPunkt=${req.rallyPunktId}  
+ELSE  -- кольцевая, грузим все чекпоинты
+    SELECT [Ключ]
+          ,[CheckTime]
+          ,[PenaltyTime]
+          ,[_LegRegistration]
+          ,[_RallyPunkt]
+          ,[ReplGuid]
+          ,[MobileID]
+          ,[MobileLogin]
+          ,[MobileDevice]
+          ,[MobileTime]
+    FROM 
+      [_CheckPoint]
+    WHERE _RallyPunkt IN (SELECT Ключ FROM _RallyPunkt WHERE _RallySpecUch=(SELECT Ключ from [_RallySpecUch] where [Текущий этап]=1))  
 
 SELECT master.sys.fn_varbintohexstr(max(DBTS)) dbts FROM ReplLog where ReplTable=${replTable}  
 `;
