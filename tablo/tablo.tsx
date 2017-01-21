@@ -38,6 +38,35 @@ function sortRowsByColumnName(rows: any[], colName: string, colName2: string, de
         let bb = Number.parseInt(b[colName]);
         let aa2 = Number.parseInt(a[colName2]);
         let bb2 = Number.parseInt(b[colName2]);
+
+        if (colName === "racenumber") {
+
+            aa = Number.parseInt(a[colName]);
+            bb = Number.parseInt(a[colName]);
+
+            let numA = legRegs[a["_LegRegistration"].toString()].RaceNumber;
+            let numB = legRegs[b["_LegRegistration"].toString()].RaceNumber;
+
+            aa = Number.parseInt(numA);
+            bb = Number.parseInt(numB);
+
+        }
+
+        if (colName2 === "racenumber") {
+
+            aa = Number.parseInt(a[colName2]);
+            bb = Number.parseInt(a[colName2]);
+
+            let numA = legRegs[a["_LegRegistration"].toString()].RaceNumber;
+            let numB = legRegs[b["_LegRegistration"].toString()].RaceNumber;
+
+            aa = Number.parseInt(numA);
+            bb = Number.parseInt(numB);
+
+        }
+
+
+
         if (isNaN(aa))
             aa = 100000;
         if (isNaN(bb))
@@ -51,7 +80,10 @@ function sortRowsByColumnName(rows: any[], colName: string, colName2: string, de
         if (isNaN(bb2))
             bb2 = 100000;
 
-        //console.log(aa + aa2, bb + bb2);
+        // console.log(a);
+        // console.log(colName, colName2);
+        // console.log(a[colName2], b[colName2]);
+        // console.log(aa + aa2, bb + bb2);
         if (!desc)
             return (aa + aa2) - (bb + bb2);
         else

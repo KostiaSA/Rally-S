@@ -25,7 +25,7 @@ let cloudDir: IConfig = {
     sqlLogin: "sa",
     sqlPassword: "12KloP09",
     sqlDatabase: "Rally",
-    port:3000,
+    port:3001,
     staticPath:"c:/rally/a/www"
 }
 
