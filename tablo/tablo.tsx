@@ -66,7 +66,6 @@ function sortRowsByColumnName(rows: any[], colName: string, colName2: string, de
         }
 
 
-
         if (isNaN(aa))
             aa = 100000;
         if (isNaN(bb))
@@ -101,6 +100,9 @@ function getColumnClass(colName: string) {
     else if (colName.startsWith("FinishNPP")) {
         return "finish-npp";
     }
+    else if (colName.startsWith("ItogoNPP")) {
+        return "itogo-npp";
+    }
     else if (colName.startsWith("StartTime")) {
         return "start-time";
     }
@@ -113,7 +115,15 @@ function getColumnClass(colName: string) {
     else if (colName.startsWith("FinishDiff")) {
         return "finish-diff"
     }
-
+    else if (colName.startsWith("FinishGap")) {
+        return "finish-gap"
+    }
+    else if (colName.startsWith("ItogoDiff")) {
+        return "itogo-diff"
+    }
+    else if (colName.startsWith("ItogoGap")) {
+        return "itogo-gap"
+    }
 }
 
 function getUrlParams(url: string) {
@@ -173,7 +183,8 @@ DECLARE @etapNum INT
 SELECT @etapNum=StageDay from [_RallySpecUch] where [Текущий этап]=1     
 EXEC [_Rally_РезультатыЭтапа] ${rallyHeaderId}, @etapNum, ${suOk}, ${suId}
 SELECT Ключ, RaceNumber, Пилот, Автомобиль, Страна FROM _LegRegistration WHERE _RallyHeader=${rallyHeaderId}
-SELECT Ключ, Номер, Название FROM _RallyPunkt
+SELECT Ключ, Номер, Название, (select top 1 Номер+' '+Название from _RallySpecUch where Ключ=_RallySpecUch) specUchName  FROM _RallyPunkt 
+SELECT Ключ, Номер, Название FROM _RallySpecUch
 `;
 
     if (!isCacheTimeOut())
@@ -209,6 +220,17 @@ SELECT Ключ, Номер, Название FROM _RallyPunkt
                 punkts[punktRow.Ключ.toString()] = {
                     Номер: punktRow.Номер,
                     Название: punktRow.Название,
+                    specUchName:punktRow.specUchName
+                }
+            });
+
+            let specUchRows = result[3];
+            let specUchs: any = {};
+
+            specUchRows.forEach((specUchRow: any) => {
+                specUchs[specUchRow.Ключ.toString()] = {
+                    Номер: specUchRow.Номер,
+                    Название: specUchRow.Название,
                 }
             });
 
@@ -243,7 +265,8 @@ SELECT Ключ, Номер, Название FROM _RallyPunkt
 
                     for (let colName of tabloColumns) {
                         if (colName.startsWith("StartNPP")) {
-                            tds.push(<th className={getColumnClass(colName)} colSpan={2}>Старт</th>);
+                            let punktId = colName.replace("StartNPP", "");
+                            tds.push(<th className={getColumnClass(colName)} colSpan={2}>Старт {punkts[punktId].specUchName}</th>);
                         }
                         if (colName.startsWith("CheckNPP")) {
                             let punktId = colName.replace("CheckNPP", "");
@@ -251,7 +274,15 @@ SELECT Ключ, Номер, Название FROM _RallyPunkt
                                          colSpan={3}>{punkts[punktId].Номер + " " + punkts[punktId].Название}</th>);
                         }
                         if (colName.startsWith("FinishNPP")) {
-                            tds.push(<th className={getColumnClass(colName)} colSpan={3}>Финиш</th>);
+                            let punktId = colName.replace("FinishNPP", "");
+                            tds.push(<th className={getColumnClass(colName)}
+                                         colSpan={3}>Финиш {punkts[punktId].specUchName}</th>);
+                        }
+                        if (colName.startsWith("ItogoNPP")) {
+                            let specUchId = colName.replace("ItogoNPP", "");
+                            tds.push(<th className={getColumnClass(colName)}
+                                         colSpan={3}>
+                                Итого {specUchs[specUchId].Номер + " " + specUchs[specUchId].Название}</th>);
                         }
                     }
 
@@ -290,7 +321,7 @@ SELECT Ключ, Номер, Название FROM _RallyPunkt
                     tds.push(<th className="pilot sorted" data-sort="pilot">Пилот{pilotSortMarker}</th>);
 
                     for (let colName of tabloColumns) {
-                        if (colName.startsWith("StartNPP") || colName.startsWith("CheckNPP") || colName.startsWith("FinishNPP")) {
+                        if (colName.startsWith("StartNPP") || colName.startsWith("CheckNPP") || colName.startsWith("FinishNPP") || colName.startsWith("ItogoNPP")) {
 
                             let checkSortMarker: any = null;
                             if (urlParams["sort"] === colName)
@@ -301,8 +332,12 @@ SELECT Ключ, Номер, Название FROM _RallyPunkt
                             tds.push(<th className={getColumnClass(colName)+" sorted"} data-sort={colName}>
                                 Место{checkSortMarker}</th>);
                         }
-                        if (colName.startsWith("StartTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap") || colName.startsWith("FinishDiff") || colName.startsWith("FinishGap")) {
-                            if (colName.startsWith("CheckGap") || colName.startsWith("FinishGap"))
+                        if (colName.startsWith("StartTime") ||
+                            colName.startsWith("CheckDiff") || colName.startsWith("CheckGap") ||
+                            colName.startsWith("FinishDiff") || colName.startsWith("FinishGap") ||
+                            colName.startsWith("ItogoDiff") || colName.startsWith("ItogoGap")
+                        ) {
+                            if (colName.startsWith("CheckGap") || colName.startsWith("FinishGap") || colName.startsWith("ItogoGap"))
                                 tds.push(<th className={getColumnClass(colName)}>GAP</th>);
                             else
                                 tds.push(<th className={getColumnClass(colName)}>Время</th>);
@@ -334,11 +369,15 @@ SELECT Ключ, Номер, Название FROM _RallyPunkt
                         tds.push(<td className="pilot">{pilot.Пилот}<br/>({pilot.Страна})</td>);
 
                         for (let colName of tabloColumns) {
-                            if (colName.startsWith("StartNPP") || colName.startsWith("CheckNPP") || colName.startsWith("FinishNPP")) {
+                            if (colName.startsWith("StartNPP") || colName.startsWith("CheckNPP") || colName.startsWith("FinishNPP") || colName.startsWith("ItogoNPP")) {
                                 tds.push(<td className={getColumnClass(colName)}>{row[colName]}</td>);
                             }
 
-                            if (colName.startsWith("StartTime") || colName.startsWith("CheckDiff") || colName.startsWith("CheckGap") || colName.startsWith("FinishDiff") || colName.startsWith("FinishGap")) {
+                            if (colName.startsWith("StartTime") ||
+                                colName.startsWith("CheckDiff") || colName.startsWith("CheckGap") ||
+                                colName.startsWith("FinishDiff") || colName.startsWith("FinishGap") ||
+                                colName.startsWith("ItogoDiff") || colName.startsWith("ItogoGap")
+                            ) {
                                 let date = row[colName] as Date;
                                 let hh = date.getUTCHours();
                                 let mm = date.getUTCMinutes();
@@ -382,8 +421,12 @@ th {
   background-color:#f3f3f3
 }
 
-.finish-npp, .finish-diff {
+.finish-npp, .finish-diff, .finish-gap {
   background-color:#f3f3f3
+}
+
+.itogo-npp, .itogo-diff, .itogo-gap {
+  background-color:#e6e6e6
 }
 
 .check-time {
@@ -394,7 +437,7 @@ th {
   color:forestgreen;
 }
 
-.check-gap {
+.check-gap, .finish-gap, .itogo-gap  {
   color:indianred;
 }
 
