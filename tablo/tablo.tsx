@@ -159,7 +159,7 @@ FROM
 
 
     let rallyHeaderId = preResult[0][0].Ключ;
-    let etapNum = 1;
+    //let etapNum = 2;
     let suOk = 0;
     let suId = 0;
 
@@ -169,7 +169,9 @@ FROM
     // DECLARE @SUID INT -- Ключ таблицы [_RallySpecUch] - если @SUOk=1
 
     let sql = `
-EXEC [_Rally_РезультатыЭтапа] ${rallyHeaderId}, ${etapNum}, ${suOk}, ${suId}
+DECLARE @etapNum INT
+SELECT @etapNum=StageDay from [_RallySpecUch] where [Текущий этап]=1     
+EXEC [_Rally_РезультатыЭтапа] ${rallyHeaderId}, @etapNum, ${suOk}, ${suId}
 SELECT Ключ, RaceNumber, Пилот, Автомобиль, Страна FROM _LegRegistration WHERE _RallyHeader=${rallyHeaderId}
 SELECT Ключ, Номер, Название FROM _RallyPunkt
 `;
