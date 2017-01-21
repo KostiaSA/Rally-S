@@ -233,7 +233,7 @@ END
                         return;
                     }
                     crew_Fields.push(["RaceNumber", stringAsSql(crew.Number.toString())]);
-                    //console.log("RaceNumber");
+                    console.log("RaceNumber-start",crew.Number);
 
                     if (crew.Pilot === undefined) {
                         reject("нет свойства 'StageCompetitions[0].CrewList[0].Pilot'");
@@ -265,6 +265,7 @@ END
 
 
                     specUch_sql += `
+SET @LegRegistrationId=NULL                    
 SELECT @LegRegistrationId=Ключ FROM _LegRegistration WHERE RaceNumber=${crew.Number} AND _RallyHeader=@RallyHeaderId 
 IF @LegRegistrationId IS NULL
 BEGIN
@@ -275,6 +276,9 @@ BEGIN
   UPDATE _LegRegistration SET ${ emitFieldList_forUpdate(crew_Fields)} WHERE Ключ=@LegRegistrationId
 END                 
 `;
+
+                    console.log("RaceNumber-fin",crew.Number);
+
 
                 });
 
