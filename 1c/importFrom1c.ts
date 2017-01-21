@@ -280,9 +280,13 @@ BEGIN
   UPDATE _RallyHeader SET ${ emitFieldList_forUpdate(raceFields)} WHERE ReplGuid=${guidAsSql(json.Race.ID)}
 END                 
             
-${specUch_sql}            
+${specUch_sql}     
+       
+EXEC _удаление_2х_значников
             
 `;
+
+// todo убрать EXEC _удаление_2х_значников
 
             console.log(sql);
 
