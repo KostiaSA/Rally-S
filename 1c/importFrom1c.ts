@@ -4,8 +4,15 @@ import {executeSql} from "../sql/MsSqlDb";
 import * as express from "express";
 import * as moment from "moment";
 
+function getRandomString(length: number = 10): string {
+    let str = Math.random().toString(36).slice(2, 12);
+    str = str + Math.random().toString(36).slice(2, 12);
+    return str.slice(0, length);
+}
+
 export function importFrom1cResponse(req: express.Request, res: express.Response, next: Function) {
     console.log("importFrom1cResponse", req.body);
+
 
     importFrom1c(req.body)
         .then(() => {
@@ -20,6 +27,14 @@ export function importFrom1cResponse(req: express.Request, res: express.Response
 
 
 export async function importFrom1c(json: any): Promise<void> {
+
+    var fs = require('fs');
+    fs.writeFile("/rally/importFrom1c_"+getRandomString(10)+".json", JSON.stringify(json), function(err:any) {
+        if(err) {
+            return console.log(err);
+        }
+        console.log("Import file was saved!");
+    });
 
     return new Promise<void>(
         (resolve: () => void, reject: (error: string) => void) => {
