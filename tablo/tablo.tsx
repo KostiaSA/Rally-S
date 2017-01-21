@@ -220,7 +220,7 @@ SELECT Ключ, Номер, Название FROM _RallySpecUch
                 punkts[punktRow.Ключ.toString()] = {
                     Номер: punktRow.Номер,
                     Название: punktRow.Название,
-                    specUchName:punktRow.specUchName
+                    specUchName: punktRow.specUchName
                 }
             });
 
@@ -266,7 +266,8 @@ SELECT Ключ, Номер, Название FROM _RallySpecUch
                     for (let colName of tabloColumns) {
                         if (colName.startsWith("StartNPP")) {
                             let punktId = colName.replace("StartNPP", "");
-                            tds.push(<th className={getColumnClass(colName)} colSpan={2}>Старт {punkts[punktId].specUchName}</th>);
+                            tds.push(<th className={getColumnClass(colName)} colSpan={2}>
+                                Старт {punkts[punktId].specUchName}</th>);
                         }
                         if (colName.startsWith("CheckNPP")) {
                             let punktId = colName.replace("CheckNPP", "");
@@ -382,11 +383,25 @@ SELECT Ключ, Номер, Название FROM _RallySpecUch
                                 let hh = date.getUTCHours();
                                 let mm = date.getUTCMinutes();
                                 let ss = date.getUTCSeconds();
+
+                                // пенализация
+                                let penTag: any = null;
+                                if (colName.startsWith("ItogoDiff")) {
+                                    let penDate = row[colName.replace("ItogoDiff", "ItogoPen")] as Date;
+                                    let pen_hh = penDate.getUTCHours();
+                                    let pen_mm = penDate.getUTCMinutes();
+                                    let pen_ss = penDate.getUTCSeconds();
+                                    // todo отрицательная пенализация
+                                    if (!(pen_hh === 0 && pen_mm === 0 && pen_ss == 0)) {
+                                        penTag =<div style={{color:"#e60000", fontSize:10}}>+{pad(pen_hh, 2)}:{pad(pen_mm, 2)}:{pad(pen_ss, 2)}</div>;
+                                    }
+                                }
+
                                 if (hh === 0 && mm === 0 && ss == 0)
                                     tds.push(<td className={getColumnClass(colName)}></td>);
                                 else
                                     tds.push(<td
-                                        className={getColumnClass(colName)}>{pad(hh, 2)}:{pad(mm, 2)}:{pad(ss, 2)}</td>);
+                                        className={getColumnClass(colName)}>{pad(hh, 2)}:{pad(mm, 2)}:{pad(ss, 2)}{penTag}</td>);
                             }
 
                         }
