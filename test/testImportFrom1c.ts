@@ -3,7 +3,7 @@ import {importFrom1c} from "../1c/importFrom1c";
 
 function testImportFrom1c() {
 
-    let text = fs.readFileSync("C:/Rally/выгрузка4.json", "utf8").replace(/^\uFEFF/, "");
+    let text = fs.readFileSync("C:/Rally/importFrom1c_qawlu9ladk.json", "utf8").replace(/^\uFEFF/, "");
 
     var obj = JSON.parse(text);
 

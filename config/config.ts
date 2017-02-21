@@ -19,7 +19,8 @@ export interface IConfig {
 // }
 
 let cloudDir: IConfig = {
-    sqlServerAddress: "online.bajarussia.com",
+//    sqlServerAddress: "online.bajarussia.com",
+    sqlServerAddress: "81.177.175.48",
     sqlServerInstance: "",
     sqlServerPort: 1433,
     sqlLogin: "sa",

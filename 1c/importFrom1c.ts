@@ -83,11 +83,16 @@ DECLARE @LegRegistrationId INT
             if (!json.StageCompetitions)
                 reject("нет свойства 'StageCompetitions'");
 
-            json.StageCompetitions = [json.StageCompetitions[0]];  // todo убрать к следующей гонке
+            //json.StageCompetitions = [json.StageCompetitions[0]];  // todo убрать к следующей гонке
 
             json.StageCompetitions.forEach((stageCompetition: any, stageCompetitionIndex: number) => {
 
                 //////// спецучасток ///////////////////
+                if (!stageCompetition.Title) {
+                    reject("нет свойства 'StageCompetitions[0].Title'");
+                }
+
+
                 if (!stageCompetition.StageList) {
                     reject("нет свойства 'StageCompetitions[0].StageList'");
                 }
@@ -245,7 +250,7 @@ END
                         return;
                     }
                     crew_Fields.push(["Пилот", stringAsSql((crew.Pilot.Name ? crew.Pilot.Name : "") + " " + (crew.Pilot.SecondName ? crew.Pilot.SecondName : ""))]);
-                    crew_Fields.push(["ПилотАнгл", stringAsSql((crew.Pilot.NameEn ? crew.Pilot.NameEn : "") + " " + (crew.Pilot.SecondNameEn ? crew.Pilot.SecondNameEn : ""))]);
+                    crew_Fields.push(["ПилотАнгл", stringAsSql((crew.Pilot.NameEN ? crew.Pilot.NameEN : "") + " " + (crew.Pilot.SecondNameEN ? crew.Pilot.SecondNameEN : ""))]);
                     crew_Fields.push(["Страна", stringAsSql(crew.Pilot.Country)]);
 
                     if (crew.Car === undefined) {
@@ -268,6 +273,7 @@ END
 
                     crew_Fields.push(["_RallyHeader", "@RallyHeaderId"]);
 
+                    let cup = stageCompetition.Title;
 
                     specUch_sql += `
 SET @LegRegistrationId=NULL                    
@@ -275,11 +281,22 @@ SELECT @LegRegistrationId=Ключ FROM _LegRegistration WHERE RaceNumber=${crew
 IF @LegRegistrationId IS NULL
 BEGIN
   INSERT _LegRegistration(${ emitFieldList(crew_Fields, "target")}) VALUES(${ emitFieldList(crew_Fields, "source")})
+  SELECT @LegRegistrationId=Ключ FROM _LegRegistration WHERE RaceNumber=${crew.Number} AND _RallyHeader=@RallyHeaderId 
 END
 ELSE
 BEGIN
   UPDATE _LegRegistration SET ${ emitFieldList_forUpdate(crew_Fields)} WHERE Ключ=@LegRegistrationId
-END                 
+END
+                 
+-- прописываем cup                 
+  UPDATE _LegRegistration SET 
+    [Участие в соревнованиях]=';' 
+  WHERE Ключ=@LegRegistrationId AND [Участие в соревнованиях]=''
+     
+  UPDATE _LegRegistration SET 
+    [Участие в соревнованиях]=[Участие в соревнованиях]+${stringAsSql(cup)}+';' 
+  WHERE Ключ=@LegRegistrationId AND CHARINDEX (';'+${stringAsSql(cup)}+';' ,[Участие в соревнованиях])=0   
+                 
 `;
 
                     console.log("RaceNumber-fin", crew.Number);
