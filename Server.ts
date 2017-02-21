@@ -45,10 +45,9 @@ app.post('/api/export', importFrom1cResponse);
 app.post('/api/import', exportTo1cResponse);
 
 //app.get('/tablo', tabloResponse);
-app.get('/tablo', (req: express.Request, res: express.Response, next: Function)=>{
-    res.redirect("http://81.177.175.48:4000/tablo");
+app.get('/tablo', (req: express.Request, res: express.Response, next: Function) => {
+    res.redirect("http://" + config.sqlServerAddress + ":4000/tablo");
 });
-
 
 
 // catch 404 and forward to error handler
